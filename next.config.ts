@@ -4,7 +4,9 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // Standalone is for Docker/VPS images only. Vercel uses its own Next.js
+  // builder — forcing standalone there breaks routing (404 NOT_FOUND).
+  ...(process.env.DOCKER_BUILD === "1" ? { output: "standalone" as const } : {}),
   images: {
     remotePatterns: [{ protocol: "https", hostname: "**" }],
     // Dev image optimization on multi‑MB local PNGs/JPGs dominates TTFB.

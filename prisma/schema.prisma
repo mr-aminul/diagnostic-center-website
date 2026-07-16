@@ -1,0 +1,265 @@
+// Prisma schema for the reusable diagnostic center platform.
+// This schema is identical across every center deployment — only the
+// seeded data (and site.config.ts branding) changes per center.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum StaffRole {
+  ADMIN
+  STAFF
+  TECHNICIAN
+}
+
+enum CollectionType {
+  IN_CENTER
+  HOME
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  SAMPLE_COLLECTED
+  PROCESSING
+  REPORT_READY
+  CANCELLED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum PaymentStatus {
+  UNPAID
+  PENDING_ONLINE
+  PAID
+  WAIVED
+}
+
+enum PaymentMethod {
+  CASH
+  ONLINE
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+model StaffUser {
+  id           String    @id @default(cuid())
+  name         String
+  phone        String    @unique
+  email        String?   @unique
+  passwordHash String
+  role         StaffRole @default(STAFF)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  uploadedReports Report[]
+
+  @@map("staff_users")
+}
+
+model Branch {
+  id        String   @id @default(cuid())
+  name      String
+  nameBn    String?
+  address   String
+  addressBn String?
+  phone     String
+  mapUrl    String?
+  isMain    Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bookings Booking[]
+
+  @@map("branches")
+}
+
+model TestCategory {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  nameBn    String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  tests Test[]
+
+  @@map("test_categories")
+}
+
+model Test {
+  id                String       @id @default(cuid())
+  name              String
+  nameBn            String?
+  categoryId        String
+  category          TestCategory @relation(fields: [categoryId], references: [id])
+  price             Decimal      @db.Decimal(10, 2)
+  sampleType        String?
+  preparation       String?
+  preparationBn     String?
+  turnaroundTime    String?
+  isActive          Boolean      @default(true)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  packages    PackageTest[]
+  bookingItems BookingItem[]
+
+  @@index([categoryId])
+  @@map("tests")
+}
+
+model Package {
+  id            String   @id @default(cuid())
+  name          String
+  nameBn        String?
+  description   String?
+  descriptionBn String?
+  price         Decimal  @db.Decimal(10, 2)
+  /** List/compare-at price shown struck through when higher than `price`. */
+  originalPrice Decimal? @db.Decimal(10, 2)
+  imageUrl      String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tests        PackageTest[]
+  bookingItems BookingItem[]
+
+  @@map("packages")
+}
+
+model PackageTest {
+  packageId String
+  package   Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  testId    String
+  test      Test    @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  @@id([packageId, testId])
+  @@map("package_tests")
+}
+
+model Doctor {
+  id          String   @id @default(cuid())
+  name        String
+  nameBn      String?
+  specialty   String
+  specialtyBn String?
+  degrees     String?
+  schedule    String?
+  scheduleBn  String?
+  photoUrl    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  appointments DoctorAppointment[]
+
+  @@map("doctors")
+}
+
+/** Walk-in / serial-based doctor consultations — system assigns serial + ETA. */
+model DoctorAppointment {
+  id              String            @id @default(cuid())
+  doctorId        String
+  doctor          Doctor            @relation(fields: [doctorId], references: [id])
+  patientName     String
+  phone           String
+  age             Int?
+  gender          Gender?
+  serialNumber    Int
+  appointmentDate DateTime          @db.Date
+  estimatedTime   String
+  status          AppointmentStatus @default(PENDING)
+  notes           String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@unique([doctorId, appointmentDate, serialNumber])
+  @@index([phone])
+  @@index([doctorId, appointmentDate])
+  @@map("doctor_appointments")
+}
+
+model Booking {
+  id             String         @id @default(cuid())
+  referenceCode  String         @unique
+  patientName    String
+  phone          String
+  age            Int?
+  gender         Gender?
+  collectionType CollectionType @default(IN_CENTER)
+  address        String?
+  branchId       String?
+  branch         Branch?        @relation(fields: [branchId], references: [id])
+  preferredDate  DateTime?
+  preferredTime  String?
+  notes          String?
+  status         BookingStatus  @default(PENDING)
+  estimatedTotal Decimal        @db.Decimal(10, 2)
+  paymentStatus  PaymentStatus  @default(UNPAID)
+  paymentMethod  PaymentMethod  @default(CASH)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  items  BookingItem[]
+  report Report?
+
+  @@index([phone])
+  @@index([referenceCode])
+  @@map("bookings")
+}
+
+model BookingItem {
+  id        String   @id @default(cuid())
+  bookingId String
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  testId    String?
+  test      Test?    @relation(fields: [testId], references: [id])
+  packageId String?
+  package   Package? @relation(fields: [packageId], references: [id])
+  nameSnapshot  String
+  priceSnapshot Decimal @db.Decimal(10, 2)
+
+  @@map("booking_items")
+}
+
+model Report {
+  id           String    @id @default(cuid())
+  bookingId    String    @unique
+  booking      Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  fileName     String
+  storageKey   String
+  uploadedById String?
+  uploadedBy   StaffUser? @relation(fields: [uploadedById], references: [id])
+  uploadedAt   DateTime  @default(now())
+
+  @@map("reports")
+}
+
+/** Short-lived SMS OTPs for the patient track/reports portal (phone-only access). */
+model PhoneOtp {
+  id        String   @id @default(cuid())
+  phoneKey  String
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([phoneKey])
+  @@map("phone_otps")
+}

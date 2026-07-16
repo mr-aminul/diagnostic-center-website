@@ -1,0 +1,12 @@
+[
+  { "key": "pathology", "name": "Pathology", "nameBn": "প্যাথলজি" },
+  { "key": "imaging", "name": "Imaging & Radiology", "nameBn": "ইমেজিং ও রেডিওলজি" },
+  { "key": "cardiology", "name": "Cardiology", "nameBn": "কার্ডিওলজি" },
+  { "key": "hormone", "name": "Hormone & Endocrinology", "nameBn": "হরমোন ও এন্ডোক্রাইনোলজি" },
+  { "key": "microbiology", "name": "Microbiology", "nameBn": "মাইক্রোবায়োলজি" },
+  { "key": "neurology", "name": "Neurology", "nameBn": "নিউরোলজি" },
+  { "key": "gastroenterology", "name": "Gastroenterology", "nameBn": "গ্যাস্ট্রোএন্টারোলজি" },
+  { "key": "urology", "name": "Urology", "nameBn": "ইউরোলজি" },
+  { "key": "dermatology", "name": "Dermatology", "nameBn": "চর্মরোগ" },
+  { "key": "pulmonary", "name": "Pulmonary & Respiratory", "nameBn": "পালমোনারি ও শ্বাসকষ্ট" }
+]

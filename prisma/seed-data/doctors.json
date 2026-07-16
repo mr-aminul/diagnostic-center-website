@@ -1,0 +1,122 @@
+[
+  {
+    "name": "Dr. Farhana Islam",
+    "nameBn": "ডা. ফারহানা ইসলাম",
+    "specialty": "Medicine & Diabetes",
+    "specialtyBn": "মেডিসিন ও ডায়াবেটিস",
+    "degrees": "MBBS, FCPS (Medicine)",
+    "schedule": "Sat–Thu, 5:00 PM – 8:00 PM",
+    "scheduleBn": "শনি–বৃহস্পতি, বিকাল ৫টা - রাত ৮টা",
+    "photoUrl": "/doctors/dr-farhana-islam.jpg"
+  },
+  {
+    "name": "Dr. Kamrul Hasan",
+    "nameBn": "ডা. কামরুল হাসান",
+    "specialty": "Cardiology",
+    "specialtyBn": "কার্ডিওলজি",
+    "degrees": "MBBS, MD (Cardiology)",
+    "schedule": "Sun, Tue, Thu, 6:00 PM – 9:00 PM",
+    "scheduleBn": "রবি, মঙ্গল, বৃহস্পতি, সন্ধ্যা ৬টা - রাত ৯টা",
+    "photoUrl": "/doctors/dr-kamrul-hasan.jpg"
+  },
+  {
+    "name": "Dr. Nusrat Jahan",
+    "nameBn": "ডা. নুসরাত জাহান",
+    "specialty": "Gynecology & Obstetrics",
+    "specialtyBn": "গাইনি ও অবস্টেট্রিক্স",
+    "degrees": "MBBS, FCPS (Gynae & Obs)",
+    "schedule": "Sat, Mon, Wed, 4:00 PM – 7:00 PM",
+    "scheduleBn": "শনি, সোম, বুধ, বিকাল ৪টা - সন্ধ্যা ৭টা",
+    "photoUrl": "/doctors/dr-nusrat-jahan.jpg"
+  },
+  {
+    "name": "Dr. Rafiqul Alam",
+    "nameBn": "ডা. রফিকুল আলম",
+    "specialty": "Orthopedics",
+    "specialtyBn": "অর্থোপেডিক্স",
+    "degrees": "MBBS, MS (Orthopedics)",
+    "schedule": "Sat, Mon, Wed, 5:00 PM – 8:00 PM",
+    "scheduleBn": "শনি, সোম, বুধ, বিকাল ৫টা - রাত ৮টা",
+    "photoUrl": "/doctors/dr-rafiqul-alam.jpg"
+  },
+  {
+    "name": "Dr. Sharmin Akter",
+    "nameBn": "ডা. শারমিন আক্তার",
+    "specialty": "Pediatrics",
+    "specialtyBn": "শিশুরোগ",
+    "degrees": "MBBS, FCPS (Pediatrics)",
+    "schedule": "Sat–Thu, 10:00 AM – 1:00 PM",
+    "scheduleBn": "শনি–বৃহস্পতি, সকাল ১০টা - দুপুর ১টা",
+    "photoUrl": "/doctors/dr-sharmin-akter.jpg"
+  },
+  {
+    "name": "Dr. Imran Hossain",
+    "nameBn": "ডা. ইমরান হোসেন",
+    "specialty": "Neurology",
+    "specialtyBn": "নিউরোলজি",
+    "degrees": "MBBS, MD (Neurology)",
+    "schedule": "Sun, Tue, Thu, 5:00 PM – 8:00 PM",
+    "scheduleBn": "রবি, মঙ্গল, বৃহস্পতি, বিকাল ৫টা - রাত ৮টা",
+    "photoUrl": "/doctors/dr-imran-hossain.jpg"
+  },
+  {
+    "name": "Dr. Taslima Begum",
+    "nameBn": "ডা. তাসলিমা বেগম",
+    "specialty": "Dermatology",
+    "specialtyBn": "চর্মরোগ",
+    "degrees": "MBBS, DDV, FCPS (Dermatology)",
+    "schedule": "Sat, Mon, Wed, 4:00 PM – 7:00 PM",
+    "scheduleBn": "শনি, সোম, বুধ, বিকাল ৪টা - সন্ধ্যা ৭টা",
+    "photoUrl": "/doctors/dr-taslima-begum.jpg"
+  },
+  {
+    "name": "Dr. Anisur Rahman",
+    "nameBn": "ডা. আনিসুর রহমান",
+    "specialty": "Gastroenterology",
+    "specialtyBn": "গ্যাস্ট্রোএন্টারোলজি",
+    "degrees": "MBBS, MD (Gastroenterology)",
+    "schedule": "Sun, Tue, Thu, 6:00 PM – 9:00 PM",
+    "scheduleBn": "রবি, মঙ্গল, বৃহস্পতি, সন্ধ্যা ৬টা - রাত ৯টা",
+    "photoUrl": "/doctors/dr-anisur-rahman.jpg"
+  },
+  {
+    "name": "Dr. Laila Sultana",
+    "nameBn": "ডা. লায়লা সুলতানা",
+    "specialty": "ENT",
+    "specialtyBn": "নাক, কান ও গলা",
+    "degrees": "MBBS, FCPS (ENT)",
+    "schedule": "Sat–Thu, 5:00 PM – 8:00 PM",
+    "scheduleBn": "শনি–বৃহস্পতি, বিকাল ৫টা - রাত ৮টা",
+    "photoUrl": "/doctors/dr-laila-sultana.jpg"
+  },
+  {
+    "name": "Dr. Mahbub Alam",
+    "nameBn": "ডা. মাহবুব আলম",
+    "specialty": "Urology",
+    "specialtyBn": "ইউরোলজি",
+    "degrees": "MBBS, MS (Urology)",
+    "schedule": "Sat, Mon, Wed, 6:00 PM – 9:00 PM",
+    "scheduleBn": "শনি, সোম, বুধ, সন্ধ্যা ৬টা - রাত ৯টা",
+    "photoUrl": "/doctors/dr-mahbub-alam.jpg"
+  },
+  {
+    "name": "Dr. Nazmul Haque",
+    "nameBn": "ডা. নাজমুল হক",
+    "specialty": "Nephrology",
+    "specialtyBn": "নেফ্রোলজি",
+    "degrees": "MBBS, MD (Nephrology)",
+    "schedule": "Sun, Tue, Thu, 4:00 PM – 7:00 PM",
+    "scheduleBn": "রবি, মঙ্গল, বৃহস্পতি, বিকাল ৪টা - সন্ধ্যা ৭টা",
+    "photoUrl": "/doctors/dr-nazmul-haque.jpg"
+  },
+  {
+    "name": "Dr. Fahmida Yasmin",
+    "nameBn": "ডা. ফাহমিদা ইয়াসমিন",
+    "specialty": "Psychiatry",
+    "specialtyBn": "সাইকিয়াট্রি",
+    "degrees": "MBBS, FCPS (Psychiatry)",
+    "schedule": "Sat, Mon, Wed, 3:00 PM – 6:00 PM",
+    "scheduleBn": "শনি, সোম, বুধ, বিকাল ৩টা - সন্ধ্যা ৬টা",
+    "photoUrl": "/doctors/dr-fahmida-yasmin.jpg"
+  }
+]

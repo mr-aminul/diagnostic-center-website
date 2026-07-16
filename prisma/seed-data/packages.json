@@ -1,0 +1,58 @@
+[
+  {
+    "name": "Basic Health Checkup",
+    "nameBn": "বেসিক হেলথ চেকআপ",
+    "description": "A quick screening package covering essential blood and urine tests.",
+    "descriptionBn": "রক্ত ও প্রস্রাবের গুরুত্বপূর্ণ পরীক্ষা নিয়ে একটি দ্রুত স্ক্রিনিং প্যাকেজ।",
+    "price": 1500,
+    "originalPrice": 2000,
+    "imageUrl": "/banners/hero-pathology-lab.png",
+    "testNames": [
+      "Complete Blood Count (CBC)",
+      "Fasting Blood Sugar (FBS)",
+      "Urine R/E"
+    ]
+  },
+  {
+    "name": "Executive Health Checkup",
+    "nameBn": "এক্সিকিউটিভ হেলথ চেকআপ",
+    "description": "Comprehensive screening for working professionals, including heart and diabetes markers.",
+    "descriptionBn": "কর্মজীবী পেশাজীবীদের জন্য হৃদযন্ত্র ও ডায়াবেটিস মার্কার সহ পূর্ণাঙ্গ স্ক্রিনিং।",
+    "price": 4500,
+    "originalPrice": 6000,
+    "imageUrl": "/banners/hero-consultation.png",
+    "testNames": [
+      "Complete Blood Count (CBC)",
+      "Fasting Blood Sugar (FBS)",
+      "Lipid Profile",
+      "Liver Function Test (LFT)",
+      "Kidney Function Test (KFT)",
+      "ECG"
+    ]
+  },
+  {
+    "name": "Diabetes Screening Package",
+    "nameBn": "ডায়াবেটিস স্ক্রিনিং প্যাকেজ",
+    "description": "Focused package for monitoring and managing diabetes.",
+    "descriptionBn": "ডায়াবেটিস পর্যবেক্ষণ ও নিয়ন্ত্রণের জন্য নির্দিষ্ট প্যাকেজ।",
+    "price": 1600,
+    "originalPrice": 2200,
+    "imageUrl": "/banners/hero-home-collection.png",
+    "testNames": ["Fasting Blood Sugar (FBS)", "HbA1c", "Lipid Profile"]
+  },
+  {
+    "name": "Women's Wellness Package",
+    "nameBn": "মহিলাদের ওয়েলনেস প্যাকেজ",
+    "description": "Essential screening package tailored for women's health.",
+    "descriptionBn": "মহিলাদের স্বাস্থ্যের জন্য উপযোগী প্রয়োজনীয় স্ক্রিনিং প্যাকেজ।",
+    "price": 3200,
+    "originalPrice": 4200,
+    "imageUrl": "/banners/hero-ultrasound.png",
+    "testNames": [
+      "Complete Blood Count (CBC)",
+      "Thyroid Profile (T3, T4, TSH)",
+      "Urine R/E",
+      "Ultrasound (Whole Abdomen)"
+    ]
+  }
+]

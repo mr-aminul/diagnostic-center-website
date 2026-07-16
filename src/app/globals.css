@@ -1,26 +1,296 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-roboto);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-heading: var(--font-roboto);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  html {
+    @apply font-sans;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Footer inherits the brand color darkened almost to black, so re-branding
+   the site in site.config.ts automatically re-tints the footer too. */
+.site-footer {
+  background-color: color-mix(in oklab, var(--primary) 30%, black);
+}
+
+/* Book-now band: dark shade of the brand into the full primary — same variables
+   as the footer, so a theme swap recolors this gradient automatically. */
+.site-cta-band {
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--primary) 30%, black) 0%,
+    var(--primary) 100%
+  );
+}
+
+/* Brand wash behind public pages — fixed so it never seams with scroll. */
+.site-page-wash {
+  background-color: var(--background);
+  background-image:
+    radial-gradient(
+      ellipse 140% 100% at 0% -5%,
+      color-mix(in oklab, var(--primary) 26%, transparent),
+      color-mix(in oklab, var(--primary) 12%, transparent) 38%,
+      color-mix(in oklab, var(--primary) 4%, transparent) 62%,
+      transparent 82%
+    ),
+    radial-gradient(
+      ellipse 120% 90% at 100% 105%,
+      color-mix(in oklab, var(--primary) 20%, transparent),
+      color-mix(in oklab, var(--primary) 9%, transparent) 35%,
+      color-mix(in oklab, var(--primary) 3%, transparent) 58%,
+      transparent 78%
+    );
+  background-attachment: fixed;
+}
+
+/* Diagonal fill sweeps through the hotline CTA; label color tracks coverage. */
+@keyframes hotline-diagonal-fill {
+  0% {
+    transform: translateX(-110%) skewX(-18deg);
+  }
+
+  38% {
+    transform: translateX(-8%) skewX(-18deg);
+  }
+
+  52% {
+    transform: translateX(-8%) skewX(-18deg);
+  }
+
+  100% {
+    transform: translateX(110%) skewX(-18deg);
+  }
+}
+
+@keyframes hotline-label {
+
+  0%,
+  18% {
+    color: var(--primary);
+  }
+
+  32%,
+  58% {
+    color: var(--primary-foreground);
+  }
+
+  72%,
+  100% {
+    color: var(--primary);
+  }
+}
+
+.animate-hotline-pulse {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+  isolation: isolate;
+  animation: hotline-label 2.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animate-hotline-pulse::before {
+  content: "";
+  position: absolute;
+  inset: -15% -45%;
+  z-index: -1;
+  background: var(--primary);
+  transform: translateX(-110%) skewX(-18deg);
+  animation: hotline-diagonal-fill 2.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animate-hotline-pulse:hover {
+  animation: none;
+  color: var(--primary-foreground);
+}
+
+.animate-hotline-pulse:hover::before {
+  animation: none;
+  opacity: 0;
+}
+
+@keyframes doctors-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    /* Exact width of the first half — keeps the next copy flush with no gap */
+    transform: translate3d(calc(-1 * var(--doctors-marquee-distance, 50%)), 0, 0);
+  }
+}
+
+.animate-doctors-marquee {
+  animation-name: doctors-marquee;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+.animation-paused {
+  animation-play-state: paused;
+}
+
+/* Top navigation progress — soft leading tip, no glow. */
+.navigation-progress__tip {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 4.5rem;
+  height: 100%;
+  transform: translateX(30%) skewX(-18deg);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--primary) 35%, white)
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-hotline-pulse {
+    animation: none;
+    color: var(--primary);
+    background-color: color-mix(in oklab, var(--primary) 10%, transparent);
+  }
+
+  .animate-hotline-pulse::before {
+    animation: none;
+    opacity: 0;
+  }
+
+  .animate-doctors-marquee {
+    animation: none;
+  }
+
+  .navigation-progress__bar {
+    transition: none !important;
+  }
+
+  .navigation-progress__tip {
+    display: none;
+  }
 }

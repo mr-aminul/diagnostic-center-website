@@ -1,0 +1,491 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "About Us",
+    "services": "Services",
+    "packages": "Packages",
+    "doctors": "Doctors",
+    "priceList": "Price List",
+    "branches": "Branches",
+    "homeCollection": "Home Sample Collection",
+    "faq": "FAQ",
+    "contact": "Contact",
+    "bookNow": "Book a Test",
+    "trackReport": "Online Report",
+    "patientPortal": "Patient Portal",
+    "language": "Language"
+  },
+  "bottomNav": {
+    "label": "Primary navigation",
+    "findDoctor": "Find Doctor",
+    "testPrices": "Test Prices",
+    "downloadReport": "Download Report",
+    "packages": "Packages",
+    "supportChat": "Support Chat"
+  },
+
+  "common": {
+    "phone": "Phone",
+    "email": "Email",
+    "address": "Address",
+    "whatsapp": "WhatsApp",
+    "readMore": "Read more",
+    "viewAll": "View all",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "loading": "Loading...",
+    "currency": "৳",
+    "callUs": "Call Us",
+    "chatOnWhatsapp": "Chat on WhatsApp",
+    "workingHours": "Working Hours",
+    "required": "This field is required",
+    "optional": "optional",
+    "back": "Back",
+    "skipToContent": "Skip to main content"
+  },
+  "home": {
+    "heroEyebrow": "Trusted diagnostics since day one",
+    "heroCta": "Book a Test",
+    "heroCtaSecondary": "View Price List",
+    "promoBanner": {
+      "label": "Promotional banners",
+      "slides": "Banner slides",
+      "previous": "Previous banner",
+      "next": "Next banner",
+      "goToSlide": "Go to banner {n}",
+      "items": {
+        "packages": {
+          "alt": "Complete health checkup packages from ৳1,500 — book a package at Health Point"
+        },
+        "homeCollection": {
+          "alt": "Home sample collection — trained collectors come to your door"
+        },
+        "reports": {
+          "alt": "Online reports ready for download — no second visit needed"
+        }
+      }
+    },
+    "search": {
+      "label": "Search the site",
+      "placeholder": "Search doctors, tests, packages…",
+      "suggestions": "Quick links",
+      "noResults": "No matches. Try another name or page.",
+      "clear": "Clear search",
+      "categories": {
+        "test": "Test",
+        "package": "Package",
+        "doctor": "Doctor",
+        "category": "Category",
+        "page": "Page",
+        "contact": "Contact",
+        "branch": "Branch"
+      }
+    },
+    "tasks": {
+      "book": "Book a Test",
+      "findDoctor": "Find a Doctor",
+      "packages": "Packages",
+      "reports": "Online Report"
+    },
+    "featuredDoctor": "Featured consultant",
+    "viewProfile": "View doctors",
+    "servicesTitle": "Our Services",
+    "servicesSubtitle": "What we help patients with every day",
+    "servicePillars": {
+      "lab": {
+        "title": "Lab Tests",
+        "desc": "Pathology, hormones, and microbiology — search and book individually."
+      },
+      "imaging": {
+        "title": "Imaging & Cardiology",
+        "desc": "X-ray, ultrasound, ECG, and related diagnostic imaging."
+      },
+      "homeCollection": {
+        "title": "Home Sample Collection",
+        "desc": "We come to you for blood and sample collection across the city."
+      },
+      "packages": {
+        "title": "Health Packages",
+        "desc": "Bundled checkups designed for annual and specialized screening."
+      }
+    },
+    "categoriesTitle": "Browse by Category",
+    "categoriesSubtitle": "Start with the department that matches your needs",
+    "packagesTitle": "Special Health Packages",
+    "packagesSubtitle": "Bundled checkups at a clear, discounted price",
+    "packageIncludes": "Includes",
+    "moreTests": "+{count} more",
+    "aboutTitle": "About {name}",
+    "aboutCta": "Read our story",
+    "whyUsTitle": "Why Choose Us",
+    "whyUs": {
+      "accurate": {
+        "title": "Accurate Results",
+        "desc": "Modern equipment and certified technologists."
+      },
+      "fast": {
+        "title": "Fast Turnaround",
+        "desc": "Most reports ready within 24 hours."
+      },
+      "homeCollection": {
+        "title": "Home Sample Collection",
+        "desc": "We come to you, anywhere in the city."
+      },
+      "doctors": {
+        "title": "Expert Doctors",
+        "desc": "Consult with our affiliated specialists."
+      }
+    },
+    "doctorsTitle": "Our Doctors",
+    "testimonialsTitle": "What Our Patients Say",
+    "testimonials": [
+      {
+        "name": "Rafiqul Islam",
+        "role": "Patient",
+        "quote": "Booked a home sample collection and got my report online within a day. Very smooth experience."
+      },
+      {
+        "name": "Shirin Akter",
+        "role": "Patient",
+        "quote": "The staff were friendly and the reception area was clean. Highly recommend their health packages."
+      },
+      {
+        "name": "Tanvir Ahmed",
+        "role": "Patient",
+        "quote": "Accurate results and the doctors explained everything clearly during my checkup."
+      }
+    ],
+    "ctaTitle": "Need a diagnostic test?",
+    "ctaSubtitle": "Book online for accurate reports — less waiting, clearer answers for you and your doctor.",
+    "ctaButton": "Book a Test"
+  },
+  "about": {
+    "title": "About Us",
+    "heroImageAlt": "Patients being welcomed at the Health Point Diagnostic Center reception",
+    "missionTitle": "Our Mission",
+    "missionBody": "To make accurate, affordable, and timely diagnostics accessible to every patient we serve.",
+    "accreditationTitle": "Accreditation & Standards",
+    "accreditationBody": "Our laboratory follows standardized quality-control protocols with regular equipment calibration."
+  },
+  "services": {
+    "title": "Services & Test Catalog",
+    "subtitle": "Search our full list of available tests by name or category",
+    "searchPlaceholder": "Search for a test (e.g. CBC, X-Ray, Lipid Profile)...",
+    "categoryAll": "All Categories",
+    "price": "Price",
+    "sampleType": "Sample",
+    "turnaround": "Report Time",
+    "preparation": "Preparation",
+    "noResults": "No tests match your search.",
+    "addToBooking": "Book this Test"
+  },
+  "packages": {
+    "title": "Health Packages",
+    "subtitle": "Bundled tests at a discounted price for complete health screening",
+    "includes": "Includes",
+    "bookPackage": "Book this Package",
+    "saveAmount": "Save {amount}",
+    "empty": "No health packages are available right now. Please check back soon or browse individual tests."
+  },
+  "doctors": {
+    "title": "Our Doctors",
+    "subtitle": "Meet our affiliated consultants and specialists",
+    "specialty": "Specialty",
+    "schedule": "Schedule",
+    "searchPlaceholder": "Search by name, specialty, degrees, schedule…",
+    "specialtyAll": "All specialties",
+    "scheduleAll": "Any schedule",
+    "scheduleListed": "Has visiting hours",
+    "scheduleSoonFilter": "Schedule coming soon",
+    "resultsCount": "{count, plural, =0 {No doctors} one {# doctor} other {# doctors}}",
+    "clearFilters": "Clear filters",
+    "noResults": "No doctors match your search. Try another name or specialty.",
+    "requestConsult": "Request consultation",
+    "appointment": "Appointment",
+    "profile": "Profile",
+    "available": "Available for consultation",
+    "noSchedule": "Schedule coming soon",
+    "scheduleSoon": "Call us to confirm the next visiting hours.",
+    "consultInfoTitle": "How appointments work",
+    "consultInfoBody": "Submit your details and we will assign a serial number with an estimated visiting time.",
+    "backToList": "All doctors",
+    "empty": "Doctor profiles will appear here once they are added by the center."
+  },
+  "doctorAppointment": {
+    "title": "Book an Appointment",
+    "subtitle": "Consultation with {name} — {specialty}",
+    "backToProfile": "Back to profile",
+    "systemAssignsNotice": "After you submit, we assign your serial number and estimated time automatically.",
+    "patientName": "Patient name",
+    "phone": "Mobile number",
+    "appointmentDate": "Appointment date",
+    "appointmentDatePlaceholder": "Select a date",
+    "appointmentDateHint": "Only days when this doctor is available can be selected.",
+    "age": "Age",
+    "gender": "Sex",
+    "genderPlaceholder": "Select",
+    "genderMale": "Male",
+    "genderFemale": "Female",
+    "genderOther": "Other",
+    "notes": "Notes for the doctor",
+    "submit": "Get my serial",
+    "successTitle": "Appointment booked",
+    "successSubtitle": "Your consultation with {name} is queued.",
+    "serialLabel": "Serial",
+    "etaLabel": "Estimated time",
+    "dateLabel": "Date",
+    "successHelp": "Please arrive a little early with this serial. Times are estimates and may shift depending on the queue.",
+    "backToDoctors": "Browse doctors",
+    "backHome": "Home",
+    "errors": {
+      "generic": "Could not book the appointment. Please try again.",
+      "errorPhoneInvalid": "Enter a valid Bangladeshi mobile number.",
+      "errorDoctorMissing": "This doctor is no longer available.",
+      "errorAgeRequired": "Please enter the patient's age.",
+      "errorGenderRequired": "Please select sex.",
+      "errorDateRequired": "Please select an appointment date.",
+      "errorPastDate": "Appointment date cannot be in the past.",
+      "errorDateUnavailable": "This doctor is not available on that day. Choose another date."
+    }
+  },
+  "priceList": {
+    "title": "Price List",
+    "subtitle": "Full, up-to-date pricing for every test we offer",
+    "searchPlaceholder": "Search tests or categories...",
+    "categoryAll": "All categories",
+    "resultsCount": "{count, plural, =0 {No tests} one {# test} other {# tests}}",
+    "clearFilters": "Clear filters",
+    "noResults": "No tests match your search.",
+    "book": "Book",
+    "table": {
+      "test": "Test Name",
+      "category": "Category",
+      "price": "Price",
+      "action": "Action"
+    }
+  },
+  "branches": {
+    "title": "Our Branches",
+    "subtitle": "Visit us at any of our locations",
+    "getDirections": "Get Directions"
+  },
+  "homeCollection": {
+    "title": "Home Sample Collection",
+    "subtitle": "Skip the visit — our trained phlebotomists collect samples at your doorstep",
+    "howItWorksTitle": "How It Works",
+    "steps": {
+      "book": {
+        "title": "Book Online",
+        "desc": "Choose your tests and preferred time slot."
+      },
+      "confirm": {
+        "title": "Get Confirmation",
+        "desc": "We'll send an SMS confirming your booking."
+      },
+      "collect": {
+        "title": "Sample Collection",
+        "desc": "Our technician visits your address to collect the sample."
+      },
+      "report": {
+        "title": "Report Delivery",
+        "desc": "Download your report online once it's ready."
+      }
+    },
+    "cta": "Request Home Collection"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "items": [
+      {
+        "question": "Do I need to book an appointment before visiting?",
+        "answer": "Walk-ins are welcome, but booking online in advance helps us reduce your waiting time."
+      },
+      {
+        "question": "How do I get my test report?",
+        "answer": "Once your report is ready, open Track / Reports, enter your mobile number, verify the SMS code, and download from your visit history. We'll also notify you by SMS."
+      },
+      {
+        "question": "Is home sample collection available everywhere in the city?",
+        "answer": "We currently cover most areas within the city. Please mention your address while booking and our team will confirm availability."
+      },
+      {
+        "question": "How long does it take to get results?",
+        "answer": "Most routine tests are ready within 24 hours. Specialized tests may take longer — the expected turnaround time is shown next to each test."
+      },
+      {
+        "question": "What payment methods do you accept?",
+        "answer": "You can pay in cash at the center or during home collection. Online payment shows a demo checkout (bKash / Nagad / card UI) until a live gateway is connected — no real charge in demo mode."
+      },
+      {
+        "question": "Can I cancel or reschedule my booking?",
+        "answer": "Yes. Open Track / Reports with your mobile number and the SMS code. While a booking is still pending or confirmed, you can cancel or pick a new date and time slot."
+      }
+    ]
+  },
+  "contact": {
+    "title": "Contact Us",
+    "subtitle": "We're here to help with any questions",
+    "formName": "Full Name",
+    "formPhone": "Phone Number",
+    "formMessage": "Message",
+    "formSuccessTitle": "Message sent",
+    "formSuccess": "Thank you! We'll get back to you shortly.",
+    "formError": "Could not send your message. Please check the form and try again."
+  },
+  "booking": {
+    "title": "Book a Test",
+    "subtitle": "Fill in your details and we'll confirm your booking by SMS",
+    "collectionType": "Collection Type",
+    "collectionInCenter": "Visit the Center",
+    "collectionHome": "Home Sample Collection",
+    "selectTests": "Select Tests / Package",
+    "searchTests": "Search tests to add...",
+    "browseAll": "Browse list",
+    "hideBrowse": "Hide list",
+    "typeTest": "Test",
+    "typePackage": "Package",
+    "selectedItems": "Selected Items",
+    "removeItem": "Remove",
+    "patientName": "Patient's Full Name",
+    "patientPhone": "Phone Number",
+    "phoneHelp": "Use your Bangladeshi mobile number, e.g. 01XXXXXXXXX",
+    "patientAge": "Age",
+    "patientGender": "Gender",
+    "selectOptional": "Select…",
+    "genderMale": "Male",
+    "genderFemale": "Female",
+    "genderOther": "Other",
+    "branch": "Preferred Branch",
+    "preferredDate": "Preferred Date",
+    "preferredTime": "Preferred Time",
+    "address": "Home Address",
+    "addressHelp": "Required for home sample collection",
+    "notes": "Additional Notes",
+    "paymentMethod": "Payment",
+    "payCash": "Pay at center / collection",
+    "payCashHelp": "Pay the estimated total in cash when you visit or when we collect the sample.",
+    "payOnline": "Online payment",
+    "payOnlineHelp": "Pay securely after booking. Demo mode shows a sample checkout (no real charge).",
+    "payAtCenter": "Amount due at center or collection",
+    "submit": "Confirm Booking",
+    "estimatedTotal": "Estimated Total",
+    "successTitle": "Booking Received!",
+    "successBody": "Your reference code is",
+    "successHelp": "Save this code for your records (staff may ask for it). To track status or download reports later, just open Track with your mobile number — no need to remember the code.",
+    "copyCode": "Copy code",
+    "copied": "Copied",
+    "shareWhatsapp": "Share on WhatsApp",
+    "goToTrack": "Open my reports",
+    "nextStepSms": "Save the SMS confirmation on your phone.",
+    "nextStepVisit": "Come at your preferred slot (or wait for home collection).",
+    "nextStepTrack": "Track anytime with your phone number + OTP and download reports when ready.",
+    "amountDue": "Amount due",
+    "paymentPendingOnline": "Online payment pending — complete checkout below or later from Track.",
+    "paymentCompleted": "Paid online",
+    "demoPaidNote": "Demo payment recorded (txn {txn}). No real money was charged.",
+    "prepTitle": "Preparation reminders",
+    "doctorNote": "Consultation request noted for {name}. Add tests if needed, then submit.",
+    "errorEmptyTests": "Please select at least one test or package.",
+    "errorAddressRequired": "Please provide an address for home sample collection.",
+    "errorPastDate": "Preferred date cannot be in the past.",
+    "errorPhoneInvalid": "Please enter a valid mobile number (at least 10 digits).",
+    "errorSlotFull": "That time slot is full for the selected date. Please choose another.",
+    "generic": "Something went wrong. Please check your details and try again."
+  },
+  "track": {
+    "title": "Patient Portal",
+    "subtitle": "Enter the mobile number you used while booking — we'll text you a one-time code",
+    "phone": "Mobile Number",
+    "phoneOnlyHelp": "No reference code needed. We'll find every booking linked to this number.",
+    "sendOtp": "Send OTP",
+    "otp": "One-time code",
+    "otpHelp": "Enter the 6-digit code we just sent by SMS",
+    "otpDevBypassHelp": "Dev mode: any OTP works (set DEV_OTP_BYPASS=false to enforce real codes). Real SMS OTP matching is already implemented for production.",
+    "otpSentTo": "Code sent to {phone}",
+    "verifyOtp": "Open my reports",
+    "resendOtp": "Resend OTP",
+    "changePhone": "Use a different number",
+    "signedInAs": "Signed in with",
+    "signOut": "Sign out",
+    "historyTitle": "Your visits",
+    "historySubtitle": "All bookings and reports for this number — newest first",
+    "staffRef": "Staff reference",
+    "reportReadyBadge": "Report ready",
+    "noHistory": "We couldn't find any bookings for this number. Please use the phone you gave when booking.",
+    "smsSentSuccess": "Status SMS sent to your phone.",
+    "status": "Status",
+    "timeline": "Booking progress",
+    "estimatedReady": "Expected report time",
+    "paymentCash": "Pay in cash at the center or during collection",
+    "paymentOnline": "Online payment: {status}",
+    "payNow": "Pay now",
+    "paymentStatus": {
+      "UNPAID": "Unpaid",
+      "PENDING_ONLINE": "Awaiting payment",
+      "PAID": "Paid",
+      "WAIVED": "Waived"
+    },
+    "downloadReport": "Download Report",
+    "reportPending": "Your report is not ready yet. We'll notify you by SMS as soon as it's available.",
+    "resendSms": "Resend status SMS",
+    "cancelBooking": "Cancel booking",
+    "reschedule": "Reschedule",
+    "confirmReschedule": "Confirm new slot",
+    "newDate": "New date",
+    "newTime": "New time",
+    "cancelledSuccess": "Your booking has been cancelled.",
+    "rescheduledSuccess": "Your preferred slot was updated. We'll confirm shortly.",
+    "errorInvalid": "Something went wrong. Please try again.",
+    "errorPhoneInvalid": "Please enter a valid mobile number.",
+    "errorOtpInvalid": "That code doesn't match. Please try again.",
+    "errorOtpExpired": "That code has expired. Request a new one.",
+    "errorOtpLocked": "Too many attempts. Request a new code.",
+    "errorOtpCooldown": "Please wait a few seconds before requesting another code.",
+    "errorSessionExpired": "Your session expired. Please verify your phone again.",
+    "errorCannotCancel": "This booking can no longer be cancelled online. Please call us.",
+    "errorCannotReschedule": "This booking can no longer be rescheduled online. Please call us.",
+    "errorRescheduleRequired": "Please choose a new date to reschedule.",
+    "errorPastDate": "The new date cannot be in the past.",
+    "errorSlotFull": "That time slot is full for the selected date. Please choose another.",
+    "statusValues": {
+      "PENDING": "Pending Confirmation",
+      "CONFIRMED": "Confirmed",
+      "SAMPLE_COLLECTED": "Sample Collected",
+      "PROCESSING": "Processing",
+      "REPORT_READY": "Report Ready",
+      "CANCELLED": "Cancelled"
+    }
+  },
+  "footer": {
+    "quickLinks": "Quick Links",
+    "ourServices": "Our Services",
+    "getInTouch": "Get in Touch",
+    "rightsReserved": "All rights reserved."
+  },
+  "payment": {
+    "demoBadge": "Demo sandbox",
+    "demoBanner": "Placeholder gateway — no real money is charged. Replace with a live provider when ready.",
+    "checkoutTitle": "Pay online",
+    "forBooking": "Booking",
+    "chooseMethod": "Choose a payment method",
+    "methods": {
+      "bkash": "bKash",
+      "nagad": "Nagad",
+      "card": "Debit / Credit card"
+    },
+    "changeMethod": "Change method",
+    "walletPhone": "Wallet mobile number",
+    "walletPin": "PIN",
+    "demoPinHelp": "Any 4–6 digit PIN works in demo mode.",
+    "cardNumber": "Card number",
+    "cardExpiry": "Expiry",
+    "cardCvc": "CVC",
+    "demoCardHelp": "Use any test card details — nothing is charged.",
+    "confirmPay": "Pay {amount}",
+    "processing": "Processing payment…",
+    "processingHelp": "Talking to the demo gateway. This usually takes a second.",
+    "successTitle": "Payment successful",
+    "successBody": "Your demo transaction was recorded. In production this would come from the gateway callback.",
+    "payLater": "Pay later from Track"
+  }
+}

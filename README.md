@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Diagnostic Center Website
 
-## Getting Started
+Multi-tenant-ready template for a diagnostic center: public bilingual site (Bangla / English), patient portal, and staff admin dashboard. Built with Next.js, Prisma, and Postgres.
 
-First, run the development server:
+## Features
+
+- Public site with tests, packages, doctors, home collection booking, and search
+- Patient portal with SMS OTP verification and report downloads
+- Admin dashboard for bookings, catalog, branches, staff, and settings
+- Per-center branding via `src/config/site.ts` (no code fork required for a standard launch)
+- Docker Compose deployment for VPS self-hosting
+
+## Quick start (local)
 
 ```bash
+cp .env.example .env   # then set AUTH_SECRET and DB credentials
+npm install
+docker compose up -d db
+npm run db:migrate
+npm run db:seed
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Site: [http://localhost:3000](http://localhost:3000) (Bangla default; English at `/en`)
+- Admin: [http://localhost:3000/admin/login](http://localhost:3000/admin/login)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Bootstrap admin credentials come from `SEED_ADMIN_*` in `.env`. Change the password after first login.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Launching a new center
 
-## Learn More
+See **[NEW_CENTER_SETUP.md](./NEW_CENTER_SETUP.md)** for branding, seed data, environment variables, Docker/Nginx deployment, and the go-live checklist.
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Development server |
+| `npm run build` / `npm start` | Production build and serve |
+| `npm run db:migrate` | Create/apply migrations (dev) |
+| `npm run db:migrate:deploy` | Apply migrations (production) |
+| `npm run db:seed` | Seed catalog + bootstrap admin |
+| `npm run db:studio` | Prisma Studio |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Important production notes
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Keep `payment.provider: "demo"` only for sandbox. Implement a real gateway in `src/lib/payment.ts` before charging patients.
+- Set `SMS_PROVIDER=http` with real gateway credentials for live OTP/SMS.
+- Never commit `.env`. Use `.env.example` as the template.

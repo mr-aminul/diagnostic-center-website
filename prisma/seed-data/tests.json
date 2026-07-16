@@ -1,0 +1,242 @@
+[
+  {
+    "name": "Complete Blood Count (CBC)",
+    "nameBn": "সিবিসি",
+    "category": "pathology",
+    "price": 500,
+    "sampleType": "Blood",
+    "preparation": "No special preparation required.",
+    "preparationBn": "বিশেষ কোনো প্রস্তুতির প্রয়োজন নেই।",
+    "turnaroundTime": "Same day"
+  },
+  {
+    "name": "Fasting Blood Sugar (FBS)",
+    "nameBn": "ফাস্টিং ব্লাড সুগার",
+    "category": "pathology",
+    "price": 150,
+    "sampleType": "Blood",
+    "preparation": "8-10 hours fasting required.",
+    "preparationBn": "৮-১০ ঘণ্টা খালি পেটে থাকতে হবে।",
+    "turnaroundTime": "Same day"
+  },
+  {
+    "name": "Lipid Profile",
+    "nameBn": "লিপিড প্রোফাইল",
+    "category": "pathology",
+    "price": 1200,
+    "sampleType": "Blood",
+    "preparation": "10-12 hours fasting required.",
+    "preparationBn": "১০-১২ ঘণ্টা খালি পেটে থাকতে হবে।",
+    "turnaroundTime": "Same day"
+  },
+  {
+    "name": "Liver Function Test (LFT)",
+    "nameBn": "লিভার ফাংশন টেস্ট",
+    "category": "pathology",
+    "price": 1000,
+    "sampleType": "Blood",
+    "preparation": "No special preparation required.",
+    "preparationBn": "বিশেষ কোনো প্রস্তুতির প্রয়োজন নেই।",
+    "turnaroundTime": "Same day"
+  },
+  {
+    "name": "Kidney Function Test (KFT)",
+    "nameBn": "কিডনি ফাংশন টেস্ট",
+    "category": "pathology",
+    "price": 900,
+    "sampleType": "Blood",
+    "preparation": "No special preparation required.",
+    "preparationBn": "বিশেষ কোনো প্রস্তুতির প্রয়োজন নেই।",
+    "turnaroundTime": "Same day"
+  },
+  {
+    "name": "HbA1c",
+    "nameBn": "এইচবিএ১সি",
+    "category": "pathology",
+    "price": 900,
+    "sampleType": "Blood",
+    "preparation": "No fasting required.",
+    "preparationBn": "খালি পেটে থাকার প্রয়োজন নেই।",
+    "turnaroundTime": "Next day"
+  },
+  {
+    "name": "Urine R/E",
+    "nameBn": "ইউরিন আর/ই",
+    "category": "pathology",
+    "price": 250,
+    "sampleType": "Urine",
+    "preparation": "Bring a fresh morning sample if possible.",
+    "preparationBn": "সম্ভব হলে সকালের প্রথম প্রস্রাব নিয়ে আসুন।",
+    "turnaroundTime": "Same day"
+  },
+  {
+    "name": "Thyroid Profile (T3, T4, TSH)",
+    "nameBn": "থাইরয়েড প্রোফাইল",
+    "category": "hormone",
+    "price": 1500,
+    "sampleType": "Blood",
+    "preparation": "No special preparation required.",
+    "preparationBn": "বিশেষ কোনো প্রস্তুতির প্রয়োজন নেই।",
+    "turnaroundTime": "Next day"
+  },
+  {
+    "name": "Chest X-Ray (P/A View)",
+    "nameBn": "চেস্ট এক্স-রে",
+    "category": "imaging",
+    "price": 600,
+    "sampleType": "N/A",
+    "preparation": "Remove metal objects from the chest area.",
+    "preparationBn": "বুকের এলাকা থেকে ধাতব বস্তু সরিয়ে ফেলুন।",
+    "turnaroundTime": "Same day"
+  },
+  {
+    "name": "Ultrasound (Whole Abdomen)",
+    "nameBn": "আল্ট্রাসনোগ্রাম (সম্পূর্ণ পেট)",
+    "category": "imaging",
+    "price": 1000,
+    "sampleType": "N/A",
+    "preparation": "6 hours fasting; keep a full bladder.",
+    "preparationBn": "৬ ঘণ্টা খালি পেটে থাকতে হবে এবং প্রস্রাবের থলি পূর্ণ রাখতে হবে।",
+    "turnaroundTime": "Same day"
+  },
+  {
+    "name": "ECG",
+    "nameBn": "ইসিজি",
+    "category": "cardiology",
+    "price": 400,
+    "sampleType": "N/A",
+    "preparation": "No special preparation required.",
+    "preparationBn": "বিশেষ কোনো প্রস্তুতির প্রয়োজন নেই।",
+    "turnaroundTime": "Same day"
+  },
+  {
+    "name": "Echocardiogram (Echo)",
+    "nameBn": "ইকোকার্ডিওগ্রাম",
+    "category": "cardiology",
+    "price": 2000,
+    "sampleType": "N/A",
+    "preparation": "No special preparation required.",
+    "preparationBn": "বিশেষ কোনো প্রস্তুতির প্রয়োজন নেই।",
+    "turnaroundTime": "Same day"
+  },
+  {
+    "name": "Widal Test",
+    "nameBn": "উইডাল টেস্ট",
+    "category": "microbiology",
+    "price": 350,
+    "sampleType": "Blood",
+    "preparation": "No special preparation required.",
+    "preparationBn": "বিশেষ কোনো প্রস্তুতির প্রয়োজন নেই।",
+    "turnaroundTime": "Same day"
+  },
+  {
+    "name": "Urine Culture & Sensitivity",
+    "nameBn": "ইউরিন কালচার",
+    "category": "microbiology",
+    "price": 800,
+    "sampleType": "Urine",
+    "preparation": "Bring a clean-catch midstream sample.",
+    "preparationBn": "মিডস্ট্রিম পরিষ্কার প্রস্রাব নমুনা আনুন।",
+    "turnaroundTime": "3 days"
+  },
+  {
+    "name": "EEG (Electroencephalogram)",
+    "nameBn": "ইইজি",
+    "category": "neurology",
+    "price": 2500,
+    "sampleType": "N/A",
+    "preparation": "Wash hair the night before; avoid caffeine for 8 hours.",
+    "preparationBn": "আগের রাতে চুল ধুয়ে নিন; ৮ ঘণ্টা ক্যাফেইন এড়িয়ে চলুন।",
+    "turnaroundTime": "Same day"
+  },
+  {
+    "name": "Nerve Conduction Study (NCS)",
+    "nameBn": "নার্ভ কন্ডাকশন স্টাডি",
+    "category": "neurology",
+    "price": 3500,
+    "sampleType": "N/A",
+    "preparation": "No special preparation required.",
+    "preparationBn": "বিশেষ কোনো প্রস্তুতির প্রয়োজন নেই।",
+    "turnaroundTime": "Same day"
+  },
+  {
+    "name": "Upper GI Endoscopy",
+    "nameBn": "আপার জিআই এন্ডোস্কোপি",
+    "category": "gastroenterology",
+    "price": 4500,
+    "sampleType": "N/A",
+    "preparation": "6–8 hours fasting required.",
+    "preparationBn": "৬–৮ ঘণ্টা খালি পেটে থাকতে হবে।",
+    "turnaroundTime": "Same day"
+  },
+  {
+    "name": "H. Pylori Test (Breath)",
+    "nameBn": "এইচ. পাইলোরি টেস্ট",
+    "category": "gastroenterology",
+    "price": 1800,
+    "sampleType": "Breath",
+    "preparation": "6 hours fasting; avoid antibiotics for 2 weeks if advised.",
+    "preparationBn": "৬ ঘণ্টা খালি পেটে থাকুন; পরামর্শ অনুযায়ী ২ সপ্তাহ অ্যান্টিবায়োটিক এড়িয়ে চলুন।",
+    "turnaroundTime": "Same day"
+  },
+  {
+    "name": "Urine R/E & Microscopy",
+    "nameBn": "ইউরিন আর/ই ও মাইক্রোস্কোপি",
+    "category": "urology",
+    "price": 300,
+    "sampleType": "Urine",
+    "preparation": "Bring a fresh morning sample if possible.",
+    "preparationBn": "সম্ভব হলে সকালের প্রথম প্রস্রাব নিয়ে আসুন।",
+    "turnaroundTime": "Same day"
+  },
+  {
+    "name": "PSA (Prostate Specific Antigen)",
+    "nameBn": "পিএসএ",
+    "category": "urology",
+    "price": 1500,
+    "sampleType": "Blood",
+    "preparation": "No special preparation required.",
+    "preparationBn": "বিশেষ কোনো প্রস্তুতির প্রয়োজন নেই।",
+    "turnaroundTime": "Next day"
+  },
+  {
+    "name": "Skin Biopsy",
+    "nameBn": "স্কিন বায়োপসি",
+    "category": "dermatology",
+    "price": 2000,
+    "sampleType": "Tissue",
+    "preparation": "Inform the doctor about any blood thinners you take.",
+    "preparationBn": "যদি রক্ত পাতলা করার ওষুধ খান তা ডাক্তারকে জানান।",
+    "turnaroundTime": "5–7 days"
+  },
+  {
+    "name": "Allergy Skin Test Panel",
+    "nameBn": "অ্যালার্জি স্কিন টেস্ট",
+    "category": "dermatology",
+    "price": 3500,
+    "sampleType": "N/A",
+    "preparation": "Avoid antihistamines for 3–5 days before the test.",
+    "preparationBn": "টেস্টের ৩–৫ দিন আগে অ্যান্টিহিস্টামিন এড়িয়ে চলুন।",
+    "turnaroundTime": "Same day"
+  },
+  {
+    "name": "Spirometry (PFT)",
+    "nameBn": "স্পাইরোমেট্রি",
+    "category": "pulmonary",
+    "price": 1200,
+    "sampleType": "N/A",
+    "preparation": "Avoid smoking and heavy meals before the test.",
+    "preparationBn": "টেস্টের আগে ধূমপান ও ভারী খাবার এড়িয়ে চলুন।",
+    "turnaroundTime": "Same day"
+  },
+  {
+    "name": "Chest CT Scan",
+    "nameBn": "চেস্ট সিটি স্ক্যান",
+    "category": "pulmonary",
+    "price": 5500,
+    "sampleType": "N/A",
+    "preparation": "Remove metal objects; fasting may be required if contrast is used.",
+    "preparationBn": "ধাতব বস্তু সরিয়ে ফেলুন; কনট্রাস্ট ব্যবহার হলে খালি পেটে থাকতে হতে পারে।",
+    "turnaroundTime": "Same day"
+  }
+]

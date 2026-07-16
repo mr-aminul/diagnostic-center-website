@@ -25,7 +25,7 @@ cd <new-center-folder>
 Edit `src/config/site.ts`:
 
 - `name`, `shortName`, `tagline`, `description` — the center's identity.
-- `logo` — replace `public/logo.svg` and `public/favicon.ico` with the center's assets, then update the paths if you renamed the files.
+- `logo` — optional custom mark at `public/logo.svg`. Until that file exists, the header and favicon use the built-in stethoscope mark (colored from `theme.primary`). To use a custom favicon instead, replace `src/app/favicon.ico` and adjust `logo.icon` if needed.
 - `theme` — pick `primary`, `secondary`, `accent` hex colors and a `radius`. Text color on top of these is computed automatically for contrast (see `src/lib/theme.ts`) — you only need to pick colors, not worry about legibility.
 - `contact` — phone numbers, WhatsApp number, email.
 - `hours` — working hours, in both English and Bangla.

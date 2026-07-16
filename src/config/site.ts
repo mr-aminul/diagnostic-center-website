@@ -85,7 +85,8 @@ export const siteConfig: SiteConfig = {
   },
   logo: {
     src: "/logo.svg",
-    icon: "/favicon.ico",
+    /** Served by app/icon.tsx — same stethoscope mark as the header BrandMark. */
+    icon: "/icon",
   },
   theme: {
     primary: "#047857",

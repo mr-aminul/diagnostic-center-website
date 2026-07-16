@@ -10,8 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { submitContactForm, type ContactFormState } from "@/app/[locale]/contact/actions";
 import { BD_PHONE_HINT } from "@/lib/phone";
-import { DevAutofillButton } from "@/components/site/dev-autofill-button";
-import { DEV_SAMPLE } from "@/lib/dev-tools";
+import { DEV_SAMPLE, demoDefault } from "@/lib/dev-tools";
 
 const initialState: ContactFormState = { status: "idle" };
 
@@ -43,18 +42,15 @@ export function ContactForm() {
 
   return (
     <form action={formAction} className="space-y-4">
-      <div className="flex justify-end">
-        <DevAutofillButton
-          fields={{
-            name: DEV_SAMPLE.contactName,
-            phone: DEV_SAMPLE.phone,
-            message: DEV_SAMPLE.contactMessage,
-          }}
-        />
-      </div>
       <div className="space-y-2">
         <Label htmlFor="name">{t("formName")}</Label>
-        <Input id="name" name="name" required maxLength={100} />
+        <Input
+          id="name"
+          name="name"
+          required
+          maxLength={100}
+          defaultValue={demoDefault(DEV_SAMPLE.contactName)}
+        />
       </div>
       <div className="space-y-2">
         <Label htmlFor="phone">{t("formPhone")}</Label>
@@ -66,11 +62,19 @@ export function ContactForm() {
           maxLength={20}
           placeholder={BD_PHONE_HINT}
           inputMode="tel"
+          defaultValue={demoDefault(DEV_SAMPLE.phone)}
         />
       </div>
       <div className="space-y-2">
         <Label htmlFor="message">{t("formMessage")}</Label>
-        <Textarea id="message" name="message" required rows={4} maxLength={1000} />
+        <Textarea
+          id="message"
+          name="message"
+          required
+          rows={4}
+          maxLength={1000}
+          defaultValue={demoDefault(DEV_SAMPLE.contactMessage)}
+        />
       </div>
       <Button type="submit" disabled={isPending}>
         {isPending ? tCommon("submitting") : tCommon("submit")}

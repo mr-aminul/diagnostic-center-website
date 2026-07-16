@@ -16,8 +16,7 @@ import { formatCurrency } from "@/lib/format";
 import { BD_PHONE_HINT } from "@/lib/phone";
 import type { Locale } from "@/config/site";
 import { cn } from "@/lib/utils";
-import { DevAutofillButton } from "@/components/site/dev-autofill-button";
-import { DEV_SAMPLE } from "@/lib/dev-tools";
+import { DEV_SAMPLE, demoDefault, isDevToolsEnabled } from "@/lib/dev-tools";
 
 type PayMethod = "bkash" | "nagad" | "card";
 type Step = "method" | "details" | "processing" | "done";
@@ -52,8 +51,12 @@ export function DemoPaymentCheckout({
   const t = useTranslations("payment");
   const [step, setStep] = useState<Step>("method");
   const [method, setMethod] = useState<PayMethod | null>(null);
-  const [walletPhone, setWalletPhone] = useState(phone);
-  const [pin, setPin] = useState("");
+  const [walletPhone, setWalletPhone] = useState(
+    () => phone || (isDevToolsEnabled() ? DEV_SAMPLE.phone : ""),
+  );
+  const [pin, setPin] = useState(() =>
+    isDevToolsEnabled() ? DEV_SAMPLE.walletPin : "",
+  );
   const [state, formAction, isPending] = useActionState(confirmDemoPayment, initialState);
 
   const [handled, setHandled] = useState(state);
@@ -160,40 +163,7 @@ export function DemoPaymentCheckout({
               {t("changeMethod")}
             </button>
 
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-medium">{t(`methods.${method}`)}</p>
-              <DevAutofillButton
-                onFill={() => {
-                  setWalletPhone(phone || DEV_SAMPLE.phone);
-                  setPin(DEV_SAMPLE.walletPin);
-                  queueMicrotask(() => {
-                    const form = document.activeElement?.closest("form") ??
-                      document.querySelector("form");
-                    // Prefer the payment form currently on screen
-                    const payForm = document.querySelector(
-                      'input[name="method"]'
-                    )?.closest("form");
-                    const target = payForm ?? form;
-                    if (!(target instanceof HTMLFormElement)) return;
-                    for (const [name, value] of Object.entries({
-                      cardNumber: DEV_SAMPLE.cardNumber,
-                      expiry: DEV_SAMPLE.cardExpiry,
-                      cvc: DEV_SAMPLE.cardCvc,
-                    })) {
-                      const el = target.elements.namedItem(name);
-                      if (el instanceof HTMLInputElement) {
-                        const setter = Object.getOwnPropertyDescriptor(
-                          HTMLInputElement.prototype,
-                          "value"
-                        )?.set;
-                        setter?.call(el, value);
-                        el.dispatchEvent(new Event("input", { bubbles: true }));
-                      }
-                    }
-                  });
-                }}
-              />
-            </div>
+            <p className="text-sm font-medium">{t(`methods.${method}`)}</p>
 
             {method !== "card" ? (
               <>
@@ -233,16 +203,30 @@ export function DemoPaymentCheckout({
                     placeholder="4111 1111 1111 1111"
                     required
                     inputMode="numeric"
+                    defaultValue={demoDefault(DEV_SAMPLE.cardNumber)}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label htmlFor="expiry">{t("cardExpiry")}</Label>
-                    <Input id="expiry" name="expiry" placeholder="MM/YY" required />
+                    <Input
+                      id="expiry"
+                      name="expiry"
+                      placeholder="MM/YY"
+                      required
+                      defaultValue={demoDefault(DEV_SAMPLE.cardExpiry)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="cvc">{t("cardCvc")}</Label>
-                    <Input id="cvc" name="cvc" placeholder="123" required maxLength={4} />
+                    <Input
+                      id="cvc"
+                      name="cvc"
+                      placeholder="123"
+                      required
+                      maxLength={4}
+                      defaultValue={demoDefault(DEV_SAMPLE.cardCvc)}
+                    />
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">{t("demoCardHelp")}</p>

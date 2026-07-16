@@ -3,6 +3,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { siteConfig } from "../src/config/site";
+import { DEV_SAMPLE } from "../src/lib/dev-tools";
 import categoriesData from "./seed-data/categories.json";
 import doctorsData from "./seed-data/doctors.json";
 import packagesData from "./seed-data/packages.json";
@@ -169,6 +170,128 @@ async function seedAdminUser() {
   console.log(`Created bootstrap admin user "${name}" (${phone}). Change this password after first login.`);
 }
 
+/** Sample visits for the patient-portal "fill" flow on the demo site. */
+async function seedDemoPatientBookings(testIdByName: Map<string, string>) {
+  if (siteConfig.payment.provider !== "demo") {
+    console.log("Payment provider is not demo — skipping demo patient bookings.");
+    return;
+  }
+
+  const cbcId = testIdByName.get("Complete Blood Count (CBC)");
+  const lipidId = testIdByName.get("Lipid Profile");
+  const packageId = (
+    await db.package.findFirst({
+      where: { id: { startsWith: "seed-" } },
+      orderBy: { price: "asc" },
+      select: { id: true, name: true, price: true },
+    })
+  );
+
+  if (!cbcId || !lipidId || !packageId) {
+    console.warn("Catalog incomplete — skipping demo patient bookings.");
+    return;
+  }
+
+  const branchId = siteConfig.branches.find((branch) => branch.isMain)?.id ?? null;
+  const tomorrow = new Date();
+  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+  tomorrow.setUTCHours(0, 0, 0, 0);
+
+  const demos = [
+    {
+      id: "seed-demo-booking-ready",
+      referenceCode: "DEMO-READY",
+      status: "REPORT_READY" as const,
+      paymentStatus: "PAID" as const,
+      paymentMethod: "ONLINE" as const,
+      preferredDate: tomorrow,
+      preferredTime: "09:00-10:00",
+      estimatedTotal: 450,
+      items: [
+        { testId: cbcId, nameSnapshot: "Complete Blood Count (CBC)", priceSnapshot: 450 },
+      ],
+    },
+    {
+      id: "seed-demo-booking-active",
+      referenceCode: "DEMO-ACTIVE",
+      status: "PROCESSING" as const,
+      paymentStatus: "UNPAID" as const,
+      paymentMethod: "CASH" as const,
+      preferredDate: tomorrow,
+      preferredTime: "10:00-11:00",
+      estimatedTotal: Number(packageId.price),
+      items: [
+        {
+          packageId: packageId.id,
+          nameSnapshot: packageId.name,
+          priceSnapshot: Number(packageId.price),
+        },
+      ],
+    },
+    {
+      id: "seed-demo-booking-pending",
+      referenceCode: "DEMO-PENDING",
+      status: "CONFIRMED" as const,
+      paymentStatus: "UNPAID" as const,
+      paymentMethod: "CASH" as const,
+      preferredDate: tomorrow,
+      preferredTime: "11:00-12:00",
+      estimatedTotal: 1200,
+      items: [
+        { testId: lipidId, nameSnapshot: "Lipid Profile", priceSnapshot: 1200 },
+      ],
+    },
+  ];
+
+  for (const demo of demos) {
+    await db.booking.upsert({
+      where: { id: demo.id },
+      update: {
+        patientName: DEV_SAMPLE.patientName,
+        phone: DEV_SAMPLE.phone,
+        age: Number(DEV_SAMPLE.age),
+        gender: "OTHER",
+        collectionType: "IN_CENTER",
+        address: null,
+        branchId,
+        preferredDate: demo.preferredDate,
+        preferredTime: demo.preferredTime,
+        notes: DEV_SAMPLE.notes,
+        status: demo.status,
+        estimatedTotal: demo.estimatedTotal,
+        paymentStatus: demo.paymentStatus,
+        paymentMethod: demo.paymentMethod,
+        items: {
+          deleteMany: {},
+          create: demo.items,
+        },
+      },
+      create: {
+        id: demo.id,
+        referenceCode: demo.referenceCode,
+        patientName: DEV_SAMPLE.patientName,
+        phone: DEV_SAMPLE.phone,
+        age: Number(DEV_SAMPLE.age),
+        gender: "OTHER",
+        collectionType: "IN_CENTER",
+        branchId,
+        preferredDate: demo.preferredDate,
+        preferredTime: demo.preferredTime,
+        notes: DEV_SAMPLE.notes,
+        status: demo.status,
+        estimatedTotal: demo.estimatedTotal,
+        paymentStatus: demo.paymentStatus,
+        paymentMethod: demo.paymentMethod,
+        items: { create: demo.items },
+      },
+    });
+  }
+
+  console.log(
+    `Seeded ${demos.length} demo patient bookings for ${DEV_SAMPLE.phone} (patient portal demo).`
+  );
+}
+
 function slugify(value: string): string {
   return value
     .toLowerCase()
@@ -182,6 +305,7 @@ async function main() {
   await seedPackages(testIdByName);
   await seedDoctors();
   await seedAdminUser();
+  await seedDemoPatientBookings(testIdByName);
 }
 
 main()

@@ -70,8 +70,8 @@ Fill in `.env`:
 | `REPORTS_STORAGE_DIR` | Where uploaded PDF reports are stored on disk. Leave as-is for Docker (it's a mounted volume). |
 | `SMS_PROVIDER` | `console` (dev/logging only) or `http` (see `src/lib/sms.ts`). |
 | `SMS_API_URL` / `SMS_API_KEY` / `SMS_SENDER_ID` | Your SMS gateway's credentials, if `SMS_PROVIDER=http`. |
-| `DEV_TOOLS` / `NEXT_PUBLIC_DEV_TOOLS` | Optional. Defaults on in non-production; set `false` to hide subtle form autofill buttons. **Hard-disabled in production builds.** |
-| `DEV_OTP_BYPASS` | Optional. Defaults on in non-production so any OTP opens Track. Set `false` to enforce real SMS OTP matching while testing. **Hard-disabled in production** — real OTP verification in `src/lib/phone-otp.ts` is what runs at go-live. |
+| `DEV_TOOLS` / `NEXT_PUBLIC_DEV_TOOLS` | Optional. While `payment.provider` is `"demo"`, forms stay prefilled (including production). Set `false` to leave forms empty. Off in production once payment is `"live"`. |
+| `DEV_OTP_BYPASS` | Optional. While payment is `"demo"`, any OTP opens the patient portal (including production). Set `false` to enforce real SMS OTP matching. Off in production once payment is `"live"`. |
 
 Also update `docker-compose.yml`'s `POSTGRES_PASSWORD` env (or set it via a
 `.env`-driven `POSTGRES_PASSWORD` variable) to match `DATABASE_URL`.

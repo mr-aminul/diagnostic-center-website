@@ -44,7 +44,6 @@ import {
 import { siteConfig, type Locale } from "@/config/site";
 import { isDemoPayment } from "@/lib/payment";
 import { DemoPaymentCheckout } from "@/components/site/demo-payment-checkout";
-import { DevAutofillButton } from "@/components/site/dev-autofill-button";
 import { DEV_SAMPLE, isDevToolsEnabled } from "@/lib/dev-tools";
 import { cn } from "@/lib/utils";
 
@@ -94,8 +93,10 @@ export function TrackForm({
   const [resendState, resendAction, resendPending] = useActionState(resendStatusSms, idle);
   const [signedOut, setSignedOut] = useState(false);
 
-  const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
+  const [phone, setPhone] = useState(() =>
+    isDevToolsEnabled() ? DEV_SAMPLE.phone : "",
+  );
+  const [otp, setOtp] = useState(() => (isDevToolsEnabled() ? DEV_SAMPLE.otp : ""));
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [appliedFocusId, setAppliedFocusId] = useState<string | null>(null);
   const [rescheduleId, setRescheduleId] = useState<string | null>(null);
@@ -501,9 +502,6 @@ export function TrackForm({
       {!otpSent ? (
         <form action={requestAction} className="space-y-4">
           <input type="hidden" name="locale" value={locale} />
-          <div className="flex justify-end">
-            <DevAutofillButton onFill={() => setPhone(DEV_SAMPLE.phone)} />
-          </div>
           <div className="space-y-2">
             <Label htmlFor="phone">{t("phone")}</Label>
             <Input
@@ -518,7 +516,9 @@ export function TrackForm({
               autoComplete="tel"
               className="bg-background"
             />
-            <p className="text-xs text-muted-foreground">{t("phoneOnlyHelp")}</p>
+            <p className="text-xs text-muted-foreground">
+              {isDevToolsEnabled() ? t("phoneDemoHelp") : t("phoneOnlyHelp")}
+            </p>
           </div>
           <Button type="submit" className="w-full" disabled={requestPending}>
             {requestPending ? tCommon("submitting") : t("sendOtp")}
@@ -532,10 +532,7 @@ export function TrackForm({
             {t("otpSentTo", { phone: phoneFrom(active) || phone })}
           </p>
           <div className="space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <Label htmlFor="otp">{t("otp")}</Label>
-              <DevAutofillButton onFill={() => setOtp(DEV_SAMPLE.otp)} />
-            </div>
+            <Label htmlFor="otp">{t("otp")}</Label>
             <Input
               id="otp"
               name="otp"

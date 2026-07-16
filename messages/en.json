@@ -397,10 +397,11 @@
     "subtitle": "Enter the mobile number you used while booking — we'll text you a one-time code",
     "phone": "Mobile Number",
     "phoneOnlyHelp": "No reference code needed. We'll find every booking linked to this number.",
+    "phoneDemoHelp": "The sample number is ready. Send the code, then open the demo reports.",
     "sendOtp": "Send OTP",
     "otp": "One-time code",
     "otpHelp": "Enter the 6-digit code we just sent by SMS",
-    "otpDevBypassHelp": "Dev mode: any OTP works (set DEV_OTP_BYPASS=false to enforce real codes). Real SMS OTP matching is already implemented for production.",
+    "otpDevBypassHelp": "The code is already filled for this demo account.",
     "otpSentTo": "Code sent to {phone}",
     "verifyOtp": "Open my reports",
     "resendOtp": "Resend OTP",
@@ -485,7 +486,7 @@
     "processing": "Processing payment…",
     "processingHelp": "Talking to the demo gateway. This usually takes a second.",
     "successTitle": "Payment successful",
-    "successBody": "Your demo transaction was recorded. In production this would come from the gateway callback.",
+    "successBody": "Your demo transaction was recorded. No real money was charged.",
     "payLater": "Pay later from Track"
   }
 }

@@ -27,8 +27,7 @@ import {
   type AppointmentFormState,
 } from "@/app/[locale]/doctors/[id]/appointment/actions";
 import { BD_PHONE_HINT } from "@/lib/phone";
-import { DevAutofillButton } from "@/components/site/dev-autofill-button";
-import { DEV_SAMPLE } from "@/lib/dev-tools";
+import { DEV_SAMPLE, demoDefault } from "@/lib/dev-tools";
 import {
   dhakaDateInputValue,
   formatLocalDateInput,
@@ -132,17 +131,6 @@ export function DoctorAppointmentForm({
       <input type="hidden" name="doctorId" value={doctorId} />
       <input type="hidden" name="appointmentDate" value={appointmentDateValue} />
 
-      <div className="flex justify-end">
-        <DevAutofillButton
-          fields={{
-            patientName: DEV_SAMPLE.patientName,
-            phone: DEV_SAMPLE.phone,
-            age: String(DEV_SAMPLE.age),
-            notes: DEV_SAMPLE.contactMessage,
-          }}
-        />
-      </div>
-
       <div className="rounded-xl border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
         {t("systemAssignsNotice")}
       </div>
@@ -150,7 +138,13 @@ export function DoctorAppointmentForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="patientName">{t("patientName")}</Label>
-          <Input id="patientName" name="patientName" required maxLength={120} />
+          <Input
+            id="patientName"
+            name="patientName"
+            required
+            maxLength={120}
+            defaultValue={demoDefault(DEV_SAMPLE.patientName)}
+          />
         </div>
 
         <div className="space-y-2">
@@ -163,6 +157,7 @@ export function DoctorAppointmentForm({
             maxLength={20}
             placeholder={BD_PHONE_HINT}
             inputMode="tel"
+            defaultValue={demoDefault(DEV_SAMPLE.phone)}
           />
         </div>
       </div>
@@ -219,13 +214,22 @@ export function DoctorAppointmentForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="age">{t("age")}</Label>
-          <Input id="age" name="age" type="number" required min={0} max={130} />
+          <Input
+            id="age"
+            name="age"
+            type="number"
+            required
+            min={0}
+            max={130}
+            defaultValue={demoDefault(DEV_SAMPLE.age)}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="gender">{t("gender")}</Label>
           <Select
             name="gender"
             required
+            defaultValue={demoDefault("OTHER")}
             items={{
               MALE: t("genderMale"),
               FEMALE: t("genderFemale"),
@@ -249,7 +253,13 @@ export function DoctorAppointmentForm({
           {t("notes")}{" "}
           <span className="text-muted-foreground">({tCommon("optional")})</span>
         </Label>
-        <Textarea id="notes" name="notes" rows={3} maxLength={500} />
+        <Textarea
+          id="notes"
+          name="notes"
+          rows={3}
+          maxLength={500}
+          defaultValue={demoDefault(DEV_SAMPLE.contactMessage)}
+        />
       </div>
 
       {state.status === "error" && (

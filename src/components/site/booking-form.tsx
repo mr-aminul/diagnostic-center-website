@@ -28,8 +28,7 @@ import {
 } from "@/lib/time-slots";
 import { isDemoPayment } from "@/lib/payment";
 import { DemoPaymentCheckout } from "@/components/site/demo-payment-checkout";
-import { DevAutofillButton } from "@/components/site/dev-autofill-button";
-import { DEV_SAMPLE } from "@/lib/dev-tools";
+import { DEV_SAMPLE, demoDefault, isDevToolsEnabled } from "@/lib/dev-tools";
 import { siteConfig, type Locale } from "@/config/site";
 import { cn } from "@/lib/utils";
 
@@ -94,6 +93,10 @@ export function BookingForm({
     if (defaultTestId) {
       const test = tests.find((item) => item.id === defaultTestId);
       if (test) items.push(test);
+    }
+    if (items.length === 0 && isDevToolsEnabled()) {
+      const pick = tests[0] ?? packages[0];
+      if (pick) items.push(pick);
     }
     return items;
   });
@@ -250,26 +253,7 @@ export function BookingForm({
   }
 
   return (
-    <form action={formAction} className="space-y-8" data-dev-form="booking">
-      <div className="flex justify-end">
-        <DevAutofillButton
-          onFill={() => {
-            const pick = tests[0] ?? packages[0];
-            if (pick) setSelected([pick]);
-            setCollectionType("IN_CENTER");
-            setPaymentMethod("CASH");
-            queueMicrotask(() => {
-              const form = document.querySelector<HTMLFormElement>('[data-dev-form="booking"]');
-              if (!form) return;
-              setField(form, "patientName", DEV_SAMPLE.patientName);
-              setField(form, "phone", DEV_SAMPLE.phone);
-              setField(form, "age", DEV_SAMPLE.age);
-              setField(form, "notes", DEV_SAMPLE.notes);
-              setField(form, "preferredDate", todayDateInputValue());
-            });
-          }}
-        />
-      </div>
+    <form action={formAction} className="space-y-8">
       <input type="hidden" name="collectionType" value={collectionType} />
       <input type="hidden" name="paymentMethod" value={paymentMethod} />
       {defaultDoctorId && <input type="hidden" name="doctorId" value={defaultDoctorId} />}
@@ -413,7 +397,13 @@ export function BookingForm({
       <section className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="patientName">{t("patientName")}</Label>
-          <Input id="patientName" name="patientName" required maxLength={120} />
+          <Input
+            id="patientName"
+            name="patientName"
+            required
+            maxLength={120}
+            defaultValue={demoDefault(DEV_SAMPLE.patientName)}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="phone">{t("patientPhone")}</Label>
@@ -425,6 +415,7 @@ export function BookingForm({
             maxLength={20}
             placeholder={BD_PHONE_HINT}
             inputMode="tel"
+            defaultValue={demoDefault(DEV_SAMPLE.phone)}
           />
           <p className="text-xs text-muted-foreground">{t("phoneHelp")}</p>
         </div>
@@ -433,7 +424,14 @@ export function BookingForm({
             {t("patientAge")}{" "}
             <span className="font-normal text-muted-foreground">({tCommon("optional")})</span>
           </Label>
-          <Input id="age" name="age" type="number" min={0} max={130} />
+          <Input
+            id="age"
+            name="age"
+            type="number"
+            min={0}
+            max={130}
+            defaultValue={demoDefault(DEV_SAMPLE.age)}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="gender">
@@ -442,6 +440,7 @@ export function BookingForm({
           </Label>
           <Select
             name="gender"
+            defaultValue={demoDefault("OTHER")}
             items={{
               MALE: t("genderMale"),
               FEMALE: t("genderFemale"),
@@ -499,6 +498,7 @@ export function BookingForm({
             name="preferredDate"
             type="date"
             min={todayDateInputValue()}
+            defaultValue={demoDefault(todayDateInputValue())}
           />
         </div>
         <div className="space-y-2">
@@ -508,6 +508,7 @@ export function BookingForm({
           </Label>
           <Select
             name="preferredTime"
+            defaultValue={demoDefault(TIME_SLOT_VALUES[0] as (typeof TIME_SLOT_VALUES)[number])}
             items={Object.fromEntries(
               TIME_SLOT_VALUES.map((slot) => [slot, labelTimeSlot(slot, locale)]),
             )}
@@ -528,7 +529,14 @@ export function BookingForm({
         {collectionType === "HOME" && (
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="address">{t("address")}</Label>
-            <Textarea id="address" name="address" required rows={3} maxLength={300} />
+            <Textarea
+              id="address"
+              name="address"
+              required
+              rows={3}
+              maxLength={300}
+              defaultValue={demoDefault(DEV_SAMPLE.address)}
+            />
             <p className="text-xs text-muted-foreground">{t("addressHelp")}</p>
           </div>
         )}
@@ -538,7 +546,13 @@ export function BookingForm({
             {t("notes")}{" "}
             <span className="font-normal text-muted-foreground">({tCommon("optional")})</span>
           </Label>
-          <Textarea id="notes" name="notes" rows={2} maxLength={500} />
+          <Textarea
+            id="notes"
+            name="notes"
+            rows={2}
+            maxLength={500}
+            defaultValue={demoDefault(DEV_SAMPLE.notes)}
+          />
         </div>
       </section>
 
@@ -605,26 +619,4 @@ export function BookingForm({
       )}
     </form>
   );
-}
-
-function setField(form: HTMLFormElement, name: string, value: string) {
-  const element = form.elements.namedItem(name);
-  if (
-    !(
-      element instanceof HTMLInputElement ||
-      element instanceof HTMLTextAreaElement ||
-      element instanceof HTMLSelectElement
-    )
-  ) {
-    return;
-  }
-  const prototype =
-    element instanceof HTMLTextAreaElement
-      ? HTMLTextAreaElement.prototype
-      : element instanceof HTMLSelectElement
-        ? HTMLSelectElement.prototype
-        : HTMLInputElement.prototype;
-  Object.getOwnPropertyDescriptor(prototype, "value")?.set?.call(element, value);
-  element.dispatchEvent(new Event("input", { bubbles: true }));
-  element.dispatchEvent(new Event("change", { bubbles: true }));
 }

@@ -3,9 +3,11 @@ import { notFound } from "next/navigation";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { routing } from "@/i18n/routing";
-import { siteConfig, type Locale } from "@/config/site";
+import type { Locale } from "@/config/site";
+import { getResolvedSiteConfig } from "@/lib/data/site-settings";
 import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
+import { PrefetchWarmup } from "@/components/site/prefetch-warmup";
 import { SiteChrome } from "@/components/site/site-chrome";
 
 export async function generateMetadata({
@@ -15,14 +17,15 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const activeLocale = (hasLocale(routing.locales, locale) ? locale : routing.defaultLocale) as Locale;
+  const site = await getResolvedSiteConfig();
 
   return {
     title: {
-      default: siteConfig.name,
-      template: `%s | ${siteConfig.shortName}`,
+      default: site.name,
+      template: `%s | ${site.shortName}`,
     },
-    description: siteConfig.description[activeLocale],
-    keywords: siteConfig.seo.keywords,
+    description: site.description[activeLocale],
+    keywords: site.seo.keywords,
   };
 }
 
@@ -41,6 +44,7 @@ export default async function LocaleLayout({
 
   // Loaded eagerly so translation errors surface immediately during dev.
   const t = await getTranslations("common");
+  const site = await getResolvedSiteConfig();
 
   return (
     <NextIntlClientProvider>
@@ -54,7 +58,14 @@ export default async function LocaleLayout({
         <Header />
         <main id="main-content" className="flex-1">{children}</main>
         <Footer />
-        <SiteChrome />
+        <SiteChrome
+          whatsapp={site.contact.whatsapp}
+          doctorsPage={site.features.doctorsPage}
+        />
+        <PrefetchWarmup
+          doctorsPage={site.features.doctorsPage}
+          homeCollection={site.features.homeCollection}
+        />
       </div>
     </NextIntlClientProvider>
   );

@@ -5,11 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { login, type LoginFormState } from "@/app/admin/(public)/login/actions";
-import { DEV_SAMPLE, demoDefault } from "@/lib/dev-tools";
 
 const initialState: LoginFormState = { status: "idle" };
 
-export function LoginForm({ next }: { next?: string }) {
+export function LoginForm({
+  next,
+  demoCredentials,
+}: {
+  next?: string;
+  demoCredentials?: { phone?: string; password?: string };
+}) {
   const [state, formAction, isPending] = useActionState(login, initialState);
 
   return (
@@ -23,7 +28,7 @@ export function LoginForm({ next }: { next?: string }) {
           type="tel"
           required
           autoFocus
-          defaultValue={demoDefault(DEV_SAMPLE.adminPhone)}
+          defaultValue={demoCredentials?.phone}
         />
       </div>
       <div className="space-y-2">
@@ -33,7 +38,7 @@ export function LoginForm({ next }: { next?: string }) {
           name="password"
           type="password"
           required
-          defaultValue={demoDefault(DEV_SAMPLE.adminPassword)}
+          defaultValue={demoCredentials?.password}
         />
       </div>
       {state.status === "error" && (

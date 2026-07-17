@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
-import { PageHero } from "@/components/site/page-hero";
+import { ArrowLeft } from "lucide-react";
 import { BookingForm } from "@/components/site/booking-form";
+import { buttonVariants } from "@/components/ui/button";
+import { Link } from "@/i18n/navigation";
 import { getPackages, getTests } from "@/lib/data/catalog";
 import { getBranches } from "@/lib/data/branches";
 import { getDoctors } from "@/lib/data/doctors";
+import { getResolvedSiteConfig } from "@/lib/data/site-settings";
 import type { Locale } from "@/config/site";
 import { buildPageMetadata } from "@/lib/seo";
+import { cn } from "@/lib/utils";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildPageMetadata({ titleKey: "booking.title", descriptionKey: "booking.subtitle" });
@@ -26,12 +30,14 @@ export default async function BookPage({
   const locale = (await getLocale()) as Locale;
   const params = await searchParams;
 
-  const [tests, packages, branches, doctors] = await Promise.all([
+  const [tests, packages, branches, doctors, site] = await Promise.all([
     getTests(),
     getPackages(),
     getBranches(),
     getDoctors(),
+    getResolvedSiteConfig(),
   ]);
+  const demoPayment = site.features.onlinePayment && site.payment.provider === "demo";
 
   const plainTests = tests.map((test) => ({
     type: "test" as const,
@@ -73,14 +79,26 @@ export default async function BookPage({
           : "/";
 
   return (
-    <div>
-      <PageHero
-        title={t("title")}
-        subtitle={t("subtitle")}
-        backHref={backHref}
-        backLabel={tCommon("back")}
-      />
-      <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-3xl px-4 pb-12 pt-6 sm:px-6 lg:px-8 lg:pb-16 lg:pt-8">
+      <Link
+        href={backHref}
+        className={cn(
+          buttonVariants({ variant: "ghost", size: "sm" }),
+          "mb-8 -ml-2 gap-2 text-muted-foreground",
+        )}
+      >
+        <ArrowLeft className="h-4 w-4" aria-hidden />
+        {tCommon("back")}
+      </Link>
+
+      <header className="max-w-2xl">
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+          {t("title")}
+        </h1>
+        <p className="mt-3 text-lg text-muted-foreground">{t("subtitle")}</p>
+      </header>
+
+      <div className="mt-10">
         <BookingForm
           tests={plainTests}
           packages={plainPackages}
@@ -97,6 +115,10 @@ export default async function BookPage({
                 : doctor.name
               : undefined
           }
+          shortName={site.shortName}
+          whatsapp={site.contact.whatsapp}
+          onlinePayment={site.features.onlinePayment}
+          demoPayment={demoPayment}
         />
       </div>
     </div>

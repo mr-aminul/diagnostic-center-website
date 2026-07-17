@@ -1,6 +1,13 @@
 /** Default clinic start (5:00 PM) when a doctor's schedule has no parseable time. */
 const DEFAULT_START_MINUTES = 17 * 60;
-const MINUTES_PER_PATIENT = 15;
+const DEFAULT_MINUTES_PER_PATIENT = 15;
+
+export function normalizeMinutesPerPatient(minutes: number | null | undefined): number {
+  if (typeof minutes !== "number" || !Number.isFinite(minutes)) {
+    return DEFAULT_MINUTES_PER_PATIENT;
+  }
+  return Math.min(120, Math.max(1, Math.round(minutes)));
+}
 
 /**
  * Pull the first clock time from free-text schedules like
@@ -31,13 +38,18 @@ export function formatClockMinutes(totalMinutes: number): string {
   return `${hours12}:${String(minutes).padStart(2, "0")} ${meridian}`;
 }
 
-/** Serial 1 starts at the clinic window; later patients get +15 minutes each. */
+/**
+ * Serial 1 starts at the clinic window; later patients are spaced by the
+ * doctor's estimated minutes per patient.
+ */
 export function estimateTimeForSerial(
   serialNumber: number,
   schedule: string | null | undefined,
+  minutesPerPatient?: number | null,
 ): string {
   const start = parseScheduleStartMinutes(schedule);
-  const eta = start + Math.max(serialNumber - 1, 0) * MINUTES_PER_PATIENT;
+  const slotMinutes = normalizeMinutesPerPatient(minutesPerPatient);
+  const eta = start + Math.max(serialNumber - 1, 0) * slotMinutes;
   return formatClockMinutes(eta);
 }
 

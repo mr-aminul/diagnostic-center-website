@@ -1,0 +1,74 @@
+[
+  {
+    "id": "seed-staff-admin-active",
+    "name": "Farhana Rahman",
+    "phone": "+8801711000001",
+    "email": "farhana.rahman@example.com",
+    "role": "ADMIN",
+    "department": "ADMINISTRATION",
+    "jobTitle": "Center administrator",
+    "employeeCode": "HP-A01",
+    "branchId": "main",
+    "isActive": true
+  },
+  {
+    "id": "seed-staff-admin-inactive",
+    "name": "Kamrul Hasan",
+    "phone": "+8801711000002",
+    "email": "kamrul.hasan@example.com",
+    "role": "ADMIN",
+    "department": "BILLING",
+    "jobTitle": "Finance lead",
+    "employeeCode": "HP-A02",
+    "branchId": "main",
+    "isActive": false
+  },
+  {
+    "id": "seed-staff-staff-active",
+    "name": "Nusrat Jahan",
+    "phone": "+8801711000003",
+    "email": "nusrat.jahan@example.com",
+    "role": "STAFF",
+    "department": "RECEPTION",
+    "jobTitle": "Front desk officer",
+    "employeeCode": "HP-S01",
+    "branchId": "main",
+    "isActive": true
+  },
+  {
+    "id": "seed-staff-staff-inactive",
+    "name": "Imran Hossain",
+    "phone": "+8801711000004",
+    "email": "imran.hossain@example.com",
+    "role": "STAFF",
+    "department": "SAMPLE_COLLECTION",
+    "jobTitle": "Phlebotomist",
+    "employeeCode": "HP-S02",
+    "branchId": null,
+    "isActive": false
+  },
+  {
+    "id": "seed-staff-tech-active",
+    "name": "Laila Sultana",
+    "phone": "+8801711000005",
+    "email": "laila.sultana@example.com",
+    "role": "TECHNICIAN",
+    "department": "LABORATORY",
+    "jobTitle": "Senior lab technician",
+    "employeeCode": "HP-T01",
+    "branchId": "main",
+    "isActive": true
+  },
+  {
+    "id": "seed-staff-tech-inactive",
+    "name": "Rafiqul Alam",
+    "phone": "+8801711000006",
+    "email": "rafiqul.alam@example.com",
+    "role": "TECHNICIAN",
+    "department": "RADIOLOGY",
+    "jobTitle": "Radiology technician",
+    "employeeCode": "HP-T02",
+    "branchId": "main",
+    "isActive": false
+  }
+]

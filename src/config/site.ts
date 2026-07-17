@@ -1,8 +1,9 @@
 /**
- * Single source of truth for everything that changes from one diagnostic
- * center to the next: branding, contact details, branches, and feature
- * flags. To launch a new center, fork this repo and edit this file (plus
- * .env) — no other code should need to change. See NEW_CENTER_SETUP.md.
+ * Defaults for branding, contact details, branches, and feature flags.
+ * After first seed, the admin CMS (`Site settings` + content pages) stores
+ * overrides in Postgres. Public pages read via `getResolvedSiteConfig()`.
+ * Edit this file for a new center’s bootstrap defaults (plus .env).
+ * See NEW_CENTER_SETUP.md.
  */
 
 export type Locale = "en" | "bn";

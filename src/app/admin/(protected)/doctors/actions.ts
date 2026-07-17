@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireSession } from "@/lib/auth";
-import { optionalText } from "@/lib/zod-helpers";
+import { optionalText, optionalUrl } from "@/lib/zod-helpers";
 import type { EntityFormState } from "@/components/admin/entity-form-dialog";
 
 const doctorSchema = z.object({
@@ -15,6 +15,13 @@ const doctorSchema = z.object({
   degrees: optionalText(200),
   schedule: optionalText(200),
   scheduleBn: optionalText(200),
+  minutesPerPatient: z.coerce
+    .number()
+    .int("Minutes per patient must be a whole number.")
+    .min(1, "Minutes per patient must be at least 1.")
+    .max(120, "Minutes per patient cannot exceed 120.")
+    .default(15),
+  photoUrl: optionalUrl(),
 });
 
 function firstZodError(error: z.ZodError): string {
@@ -31,6 +38,8 @@ export async function createDoctor(
 
   await db.doctor.create({ data: parsed.data });
   revalidatePath("/admin/doctors");
+  revalidatePath("/doctors");
+  revalidatePath("/");
   return { status: "success" };
 }
 
@@ -45,6 +54,9 @@ export async function updateDoctor(
 
   await db.doctor.update({ where: { id }, data: parsed.data });
   revalidatePath("/admin/doctors");
+  revalidatePath("/doctors");
+  revalidatePath(`/doctors/${id}`);
+  revalidatePath("/");
   return { status: "success" };
 }
 

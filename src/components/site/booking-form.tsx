@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useId, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Check, Copy, Search, X } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { GenderRadioGroup } from "@/components/gender-radio-group";
 import {
   Select,
   SelectContent,
@@ -20,16 +21,11 @@ import {
 import { Link } from "@/i18n/navigation";
 import { createBooking, type BookingFormState } from "@/app/[locale]/book/actions";
 import { formatCurrency } from "@/lib/format";
-import { BD_PHONE_HINT } from "@/lib/phone";
-import {
-  TIME_SLOT_VALUES,
-  labelTimeSlot,
-  todayDateInputValue,
-} from "@/lib/time-slots";
-import { isDemoPayment } from "@/lib/payment";
+import { BD_PHONE_HINT, sanitizeBdPhoneInput } from "@/lib/phone";
+import { TIME_SLOT_VALUES, todayDateInputValue, labelTimeSlot } from "@/lib/time-slots";
 import { DemoPaymentCheckout } from "@/components/site/demo-payment-checkout";
 import { DEV_SAMPLE, demoDefault, isDevToolsEnabled } from "@/lib/dev-tools";
-import { siteConfig, type Locale } from "@/config/site";
+import type { Locale } from "@/config/site";
 import { cn } from "@/lib/utils";
 
 interface PickableItem {
@@ -60,6 +56,10 @@ export function BookingForm({
   defaultTestId,
   defaultDoctorId,
   defaultDoctorName,
+  shortName,
+  whatsapp,
+  onlinePayment,
+  demoPayment,
 }: {
   tests: PickableItem[];
   packages: PickableItem[];
@@ -70,6 +70,10 @@ export function BookingForm({
   defaultTestId?: string;
   defaultDoctorId?: string;
   defaultDoctorName?: string;
+  shortName: string;
+  whatsapp: string;
+  onlinePayment: boolean;
+  demoPayment: boolean;
 }) {
   const t = useTranslations("booking");
   const tCommon = useTranslations("common");
@@ -79,11 +83,15 @@ export function BookingForm({
     defaultCollectionType
   );
   const [search, setSearch] = useState("");
-  const [showBrowse, setShowBrowse] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"CASH" | "ONLINE">("CASH");
+  const [gender, setGender] = useState<"MALE" | "FEMALE" | "OTHER" | "">(
+    () => (demoDefault("OTHER") as "MALE" | "FEMALE" | "OTHER" | "") || "",
+  );
   const [copied, setCopied] = useState(false);
   const [showDemoPay, setShowDemoPay] = useState(true);
   const [paidTxn, setPaidTxn] = useState<string | null>(null);
+  const listboxId = useId();
   const [selected, setSelected] = useState<PickableItem[]>(() => {
     const items: PickableItem[] = [];
     if (defaultPackageId) {
@@ -103,20 +111,19 @@ export function BookingForm({
 
   const allItems = useMemo(() => [...packages, ...tests], [packages, tests]);
 
-  const searchResults = useMemo(() => {
-    if (!search.trim()) return [];
-    const query = search.trim().toLowerCase();
-    return allItems
-      .filter((item) => !selected.some((s) => s.id === item.id && s.type === item.type))
-      .filter((item) => `${item.name} ${item.nameBn ?? ""}`.toLowerCase().includes(query))
-      .slice(0, 8);
-  }, [allItems, search, selected]);
-
-  const browseItems = useMemo(() => {
-    return allItems
-      .filter((item) => !selected.some((s) => s.id === item.id && s.type === item.type))
-      .slice(0, 24);
+  const availableItems = useMemo(() => {
+    return allItems.filter(
+      (item) => !selected.some((s) => s.id === item.id && s.type === item.type),
+    );
   }, [allItems, selected]);
+
+  const searchResults = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return availableItems.slice(0, 24);
+    return availableItems
+      .filter((item) => `${item.name} ${item.nameBn ?? ""}`.toLowerCase().includes(query))
+      .slice(0, 24);
+  }, [availableItems, search]);
 
   const total = selected.reduce((sum, item) => sum + item.price, 0);
 
@@ -132,6 +139,7 @@ export function BookingForm({
   function addItem(item: PickableItem) {
     setSelected((current) => [...current, item]);
     setSearch("");
+    setSearchOpen(true);
   }
 
   function removeItem(item: PickableItem) {
@@ -157,9 +165,9 @@ export function BookingForm({
 
   if (state.status === "success" && state.referenceCode) {
     const whatsappText = encodeURIComponent(
-      `My booking reference at ${siteConfig.shortName} is ${state.referenceCode}`
+      `My booking reference at ${shortName} is ${state.referenceCode}`
     );
-    const whatsappHref = `https://wa.me/${siteConfig.contact.whatsapp.replace(/[^\d]/g, "")}?text=${whatsappText}`;
+    const whatsappHref = `https://wa.me/${whatsapp.replace(/[^\d]/g, "")}?text=${whatsappText}`;
 
     return (
       <Card className="mx-auto max-w-lg animate-in fade-in zoom-in-95 duration-500">
@@ -212,7 +220,7 @@ export function BookingForm({
           )}
 
           {state.paymentMethod === "ONLINE" &&
-            isDemoPayment() &&
+            demoPayment &&
             showDemoPay &&
             !paidTxn &&
             typeof state.estimatedTotal === "number" &&
@@ -256,6 +264,7 @@ export function BookingForm({
     <form action={formAction} className="space-y-8">
       <input type="hidden" name="collectionType" value={collectionType} />
       <input type="hidden" name="paymentMethod" value={paymentMethod} />
+      <input type="hidden" name="gender" value={gender} />
       {defaultDoctorId && <input type="hidden" name="doctorId" value={defaultDoctorId} />}
       <input
         type="hidden"
@@ -278,14 +287,14 @@ export function BookingForm({
         >
           <Label
             htmlFor="collection-in-center"
-            className="flex items-center gap-3 rounded-lg border p-4 transition-colors has-data-[state=checked]:border-primary has-data-[state=checked]:bg-primary/5"
+            className="flex items-center gap-3 rounded-lg border bg-background p-4 transition-colors has-[[data-checked]]:border-primary has-[[data-checked]]:bg-secondary"
           >
             <RadioGroupItem value="IN_CENTER" id="collection-in-center" />
             {t("collectionInCenter")}
           </Label>
           <Label
             htmlFor="collection-home"
-            className="flex items-center gap-3 rounded-lg border p-4 transition-colors has-data-[state=checked]:border-primary has-data-[state=checked]:bg-primary/5"
+            className="flex items-center gap-3 rounded-lg border bg-background p-4 transition-colors has-[[data-checked]]:border-primary has-[[data-checked]]:bg-secondary"
           >
             <RadioGroupItem value="HOME" id="collection-home" />
             {t("collectionHome")}
@@ -294,74 +303,71 @@ export function BookingForm({
       </section>
 
       <section>
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <Label htmlFor="test-search">{t("selectTests")}</Label>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowBrowse((value) => !value)}
-          >
-            {showBrowse ? t("hideBrowse") : t("browseAll")}
-          </Button>
-        </div>
-        <div className="relative">
+        <Label htmlFor="test-search" className="mb-3 block">
+          {t("selectTests")}
+        </Label>
+        <div
+          className="relative"
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+              setSearchOpen(false);
+            }
+          }}
+        >
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             id="test-search"
+            role="combobox"
+            aria-expanded={searchOpen}
+            aria-controls={listboxId}
+            aria-autocomplete="list"
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setSearchOpen(true);
+            }}
+            onFocus={() => setSearchOpen(true)}
             placeholder={t("searchTests")}
             aria-label={t("searchTests")}
             className="pl-9"
             autoComplete="off"
           />
-          {searchResults.length > 0 && (
+          {searchOpen && (
             <div
+              id={listboxId}
               role="listbox"
-              className="absolute z-10 mt-1 max-h-64 w-full overflow-auto rounded-lg border bg-popover p-1 shadow-md animate-in fade-in-0 zoom-in-95"
+              className="absolute z-10 mt-1 max-h-72 w-full overflow-auto rounded-lg border bg-popover p-1 shadow-md animate-in fade-in-0 zoom-in-95"
             >
-              {searchResults.map((item) => (
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={false}
-                  key={`${item.type}-${item.id}`}
-                  onClick={() => addItem(item)}
-                  className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
-                >
-                  <span>
-                    <Badge variant="outline" className="mr-2 text-[10px]">
-                      {item.type === "package" ? t("typePackage") : t("typeTest")}
-                    </Badge>
-                    {itemLabel(item)}
-                  </span>
-                  <span className="text-muted-foreground">
-                    {formatCurrency(item.price, locale)}
-                  </span>
-                </button>
-              ))}
+              {searchResults.length === 0 ? (
+                <p className="px-3 py-4 text-sm text-muted-foreground">
+                  {search.trim() ? t("noSearchResults") : t("noItemsLeft")}
+                </p>
+              ) : (
+                searchResults.map((item) => (
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={false}
+                    key={`${item.type}-${item.id}`}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => addItem(item)}
+                    className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
+                  >
+                    <span>
+                      <Badge variant="outline" className="mr-2 text-[10px]">
+                        {item.type === "package" ? t("typePackage") : t("typeTest")}
+                      </Badge>
+                      {itemLabel(item)}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {formatCurrency(item.price, locale)}
+                    </span>
+                  </button>
+                ))
+              )}
             </div>
           )}
         </div>
-
-        {showBrowse && (
-          <div className="mt-3 grid max-h-72 gap-2 overflow-auto rounded-lg border p-3 sm:grid-cols-2">
-            {browseItems.map((item) => (
-              <button
-                type="button"
-                key={`browse-${item.type}-${item.id}`}
-                onClick={() => addItem(item)}
-                className="flex items-center justify-between rounded-md border px-3 py-2 text-left text-sm transition-colors hover:border-primary hover:bg-primary/5"
-              >
-                <span className="line-clamp-1">{itemLabel(item)}</span>
-                <span className="shrink-0 text-xs text-muted-foreground">
-                  {formatCurrency(item.price, locale)}
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
 
         {selected.length > 0 && (
           <div className="mt-4 space-y-2">
@@ -412,10 +418,18 @@ export function BookingForm({
             name="phone"
             type="tel"
             required
-            maxLength={20}
+            maxLength={14}
             placeholder={BD_PHONE_HINT}
-            inputMode="tel"
+            inputMode="numeric"
+            autoComplete="tel"
+            pattern="^(?:\+?880|0)?1[3-9]\d{8}$"
+            title={BD_PHONE_HINT}
             defaultValue={demoDefault(DEV_SAMPLE.phone)}
+            onInput={(event) => {
+              const input = event.currentTarget;
+              const next = sanitizeBdPhoneInput(input.value);
+              if (input.value !== next) input.value = next;
+            }}
           />
           <p className="text-xs text-muted-foreground">{t("phoneHelp")}</p>
         </div>
@@ -434,28 +448,17 @@ export function BookingForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="gender">
-            {t("patientGender")}{" "}
-            <span className="font-normal text-muted-foreground">({tCommon("optional")})</span>
-          </Label>
-          <Select
-            name="gender"
-            defaultValue={demoDefault("OTHER")}
-            items={{
-              MALE: t("genderMale"),
-              FEMALE: t("genderFemale"),
-              OTHER: t("genderOther"),
+          <Label>{t("patientGender")}</Label>
+          <GenderRadioGroup
+            value={gender}
+            onValueChange={setGender}
+            required
+            labels={{
+              male: t("genderMale"),
+              female: t("genderFemale"),
+              other: t("genderOther"),
             }}
-          >
-            <SelectTrigger id="gender" className="w-full">
-              <SelectValue placeholder={t("selectOptional")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="MALE">{t("genderMale")}</SelectItem>
-              <SelectItem value="FEMALE">{t("genderFemale")}</SelectItem>
-              <SelectItem value="OTHER">{t("genderOther")}</SelectItem>
-            </SelectContent>
-          </Select>
+          />
         </div>
 
         {branches.length > 1 && (
@@ -490,41 +493,50 @@ export function BookingForm({
 
         <div className="space-y-2">
           <Label htmlFor="preferredDate">
-            {t("preferredDate")}{" "}
-            <span className="font-normal text-muted-foreground">({tCommon("optional")})</span>
+            {t("preferredDate")}
+            {collectionType === "HOME" ? null : (
+              <>
+                {" "}
+                <span className="font-normal text-muted-foreground">
+                  ({tCommon("optional")})
+                </span>
+              </>
+            )}
           </Label>
           <Input
             id="preferredDate"
             name="preferredDate"
             type="date"
             min={todayDateInputValue()}
+            required={collectionType === "HOME"}
             defaultValue={demoDefault(todayDateInputValue())}
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="preferredTime">
-            {t("preferredTime")}{" "}
-            <span className="font-normal text-muted-foreground">({tCommon("optional")})</span>
-          </Label>
-          <Select
-            name="preferredTime"
-            defaultValue={demoDefault(TIME_SLOT_VALUES[0] as (typeof TIME_SLOT_VALUES)[number])}
-            items={Object.fromEntries(
-              TIME_SLOT_VALUES.map((slot) => [slot, labelTimeSlot(slot, locale)]),
-            )}
-          >
-            <SelectTrigger id="preferredTime" className="w-full">
-              <SelectValue placeholder={t("selectOptional")} />
-            </SelectTrigger>
-            <SelectContent>
-              {TIME_SLOT_VALUES.map((slot) => (
-                <SelectItem key={slot} value={slot}>
-                  {labelTimeSlot(slot, locale)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+
+        {collectionType === "HOME" ? (
+          <div className="space-y-2">
+            <Label htmlFor="preferredTime">{t("preferredTime")}</Label>
+            <Select
+              name="preferredTime"
+              required
+              defaultValue={demoDefault(TIME_SLOT_VALUES[2])}
+              items={Object.fromEntries(
+                TIME_SLOT_VALUES.map((slot) => [slot, labelTimeSlot(slot, locale)]),
+              )}
+            >
+              <SelectTrigger id="preferredTime" className="w-full">
+                <SelectValue placeholder={t("preferredTime")} />
+              </SelectTrigger>
+              <SelectContent>
+                {TIME_SLOT_VALUES.map((slot) => (
+                  <SelectItem key={slot} value={slot}>
+                    {labelTimeSlot(slot, locale)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
 
         {collectionType === "HOME" && (
           <div className="space-y-2 sm:col-span-2">
@@ -563,12 +575,12 @@ export function BookingForm({
           onValueChange={(value) => setPaymentMethod(value as "CASH" | "ONLINE")}
           className={cn(
             "grid gap-3",
-            siteConfig.features.onlinePayment ? "sm:grid-cols-2" : "grid-cols-1"
+            onlinePayment ? "sm:grid-cols-2" : "grid-cols-1"
           )}
         >
           <Label
             htmlFor="pay-cash"
-            className="flex flex-col gap-1 rounded-lg border p-4 has-data-[state=checked]:border-primary has-data-[state=checked]:bg-primary/5"
+            className="flex flex-col gap-1 rounded-lg border bg-background p-4 has-[[data-checked]]:border-primary has-[[data-checked]]:bg-secondary"
           >
             <span className="flex items-center gap-3">
               <RadioGroupItem value="CASH" id="pay-cash" />
@@ -576,10 +588,10 @@ export function BookingForm({
             </span>
             <span className="pl-7 text-xs text-muted-foreground">{t("payCashHelp")}</span>
           </Label>
-          {siteConfig.features.onlinePayment && (
+          {onlinePayment && (
             <Label
               htmlFor="pay-online"
-              className="flex flex-col gap-1 rounded-lg border p-4 has-data-[state=checked]:border-primary has-data-[state=checked]:bg-primary/5"
+              className="flex flex-col gap-1 rounded-lg border bg-background p-4 has-[[data-checked]]:border-primary has-[[data-checked]]:bg-secondary"
             >
               <span className="flex items-center gap-3">
                 <RadioGroupItem value="ONLINE" id="pay-online" />
@@ -597,9 +609,15 @@ export function BookingForm({
             {t("estimatedTotal")}
           </p>
           <p className="text-2xl font-bold text-primary">{formatCurrency(total, locale)}</p>
-          <p className="text-xs text-muted-foreground">{t("payAtCenter")}</p>
+          <p className="text-xs text-muted-foreground">
+            {paymentMethod === "ONLINE" && demoPayment
+              ? t("demoPaymentTotalHelp")
+              : paymentMethod === "ONLINE"
+                ? t("payOnlineHelp")
+                : t("payAtCenter")}
+          </p>
         </div>
-        <Button type="submit" size="lg" disabled={isPending || selected.length === 0}>
+        <Button type="submit" size="lg" disabled={isPending || selected.length === 0 || !gender}>
           {isPending ? tCommon("submitting") : t("submit")}
         </Button>
       </section>
@@ -613,6 +631,9 @@ export function BookingForm({
               | "errorPastDate"
               | "errorPhoneInvalid"
               | "errorSlotFull"
+              | "errorGenderRequired"
+              | "errorDateRequired"
+              | "errorTimeRequired"
               | "generic"
           )}
         </p>

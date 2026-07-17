@@ -9,7 +9,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { siteConfig } from "@/config/site";
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 
@@ -21,17 +20,23 @@ type NavItem = {
   show: boolean;
 };
 
-export function MobileBottomNav() {
+export function MobileBottomNav({
+  whatsapp,
+  doctorsPage,
+}: {
+  whatsapp: string;
+  doctorsPage: boolean;
+}) {
   const t = useTranslations("bottomNav");
   const pathname = usePathname();
-  const whatsappDigits = siteConfig.contact.whatsapp.replace(/[^\d]/g, "");
+  const whatsappDigits = whatsapp.replace(/[^\d]/g, "");
 
   const allItems: NavItem[] = [
     {
       key: "findDoctor",
       href: "/doctors",
       Icon: UserRound,
-      show: siteConfig.features.doctorsPage,
+      show: doctorsPage,
     },
     {
       key: "testPrices",
@@ -115,6 +120,7 @@ export function MobileBottomNav() {
             <li key={item.key} className="flex min-w-0 flex-1">
               <Link
                 href={item.href!}
+                prefetch
                 className={className}
                 aria-current={active ? "page" : undefined}
               >

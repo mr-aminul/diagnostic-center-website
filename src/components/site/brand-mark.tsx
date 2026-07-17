@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { Stethoscope } from "lucide-react";
-import { siteConfig } from "@/config/site";
+import { getResolvedSiteConfig } from "@/lib/data/site-settings";
 import { hasCustomLogo } from "@/lib/theme";
 
 /**
@@ -8,12 +8,14 @@ import { hasCustomLogo } from "@/lib/theme";
  * otherwise falls back to a stethoscope mark so new centers have a usable
  * brand icon from the very first deploy.
  */
-export function BrandMark({ size = 36 }: { size?: number }) {
-  if (hasCustomLogo()) {
+export async function BrandMark({ size = 36 }: { size?: number }) {
+  const site = await getResolvedSiteConfig();
+
+  if (hasCustomLogo(site.logo.src)) {
     return (
       <Image
-        src={siteConfig.logo.src}
-        alt={siteConfig.shortName}
+        src={site.logo.src}
+        alt={site.shortName}
         width={size}
         height={size}
         className="rounded-lg object-contain"

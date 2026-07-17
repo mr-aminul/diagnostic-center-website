@@ -6,14 +6,35 @@ const globalForPrisma = globalThis as unknown as {
   prismaSchemaHash?: string;
 };
 
-// Include model list so adding PhoneOtp (etc.) invalidates the HMR-cached client.
-const schemaHash = Prisma.dmmf.datamodel.models
-  .map((model) => `${model.name}:${model.fields.map((field) => field.name).join(",")}`)
-  .join("|");
+// Include model list so adding PhoneOtp / BookingItem.report (etc.) invalidates the HMR-cached client.
+const schemaHash = [
+  "v2-item-reports",
+  ...Prisma.dmmf.datamodel.models.map(
+    (model) => `${model.name}:${model.fields.map((field) => field.name).join(",")}`,
+  ),
+].join("|");
 
 function createPrismaClient() {
-  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-  return new PrismaClient({ adapter });
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error("DATABASE_URL is not set");
+  }
+
+  // Fail fast instead of hanging page renders when Postgres is wedged.
+  const url = new URL(connectionString);
+  if (!url.searchParams.has("connect_timeout")) {
+    url.searchParams.set("connect_timeout", "5");
+  }
+  if (!url.searchParams.has("options")) {
+    url.searchParams.set("options", "-c statement_timeout=8000");
+  }
+
+  const adapter = new PrismaPg({ connectionString: url.toString() });
+  return new PrismaClient({
+    adapter,
+    // Avoid long silent waits that make every soft nav feel broken.
+    transactionOptions: { maxWait: 5_000, timeout: 10_000 },
+  });
 }
 
 function modelDelegateName(modelName: string): string {
@@ -54,8 +75,25 @@ function getClient(): PrismaClient {
  */
 export const db: PrismaClient = new Proxy({} as PrismaClient, {
   get(_target, property) {
-    const client = getClient();
-    const value = Reflect.get(client, property, client);
+    let client = getClient();
+    let value = Reflect.get(client, property, client);
+
+    // Turbopack/HMR can keep a PrismaClient instance that predates `prisma generate`
+    // even after DMMF updates. If a known model delegate is missing, force one rebuild.
+    if (
+      typeof property === "string" &&
+      (value == null || typeof (value as { findMany?: unknown }).findMany !== "function") &&
+      Prisma.dmmf.datamodel.models.some(
+        (model) => modelDelegateName(model.name) === property,
+      )
+    ) {
+      void client.$disconnect().catch(() => undefined);
+      globalForPrisma.prisma = undefined;
+      globalForPrisma.prismaSchemaHash = undefined;
+      client = getClient();
+      value = Reflect.get(client, property, client);
+    }
+
     return typeof value === "function" ? value.bind(client) : value;
   },
 });

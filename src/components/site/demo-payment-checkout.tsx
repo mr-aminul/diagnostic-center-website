@@ -240,7 +240,7 @@ export function DemoPaymentCheckout({
             )}
 
             <Button type="submit" className="w-full" disabled={isPending}>
-              {t("confirmPay", { amount: formatCurrency(amount, locale) })}
+              {t("confirmDemoPay", { amount: formatCurrency(amount, locale) })}
             </Button>
           </form>
         )}

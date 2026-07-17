@@ -2,12 +2,19 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { db } from "@/lib/db";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { AdminBookingForm } from "@/components/admin/admin-booking-form";
+import { BookingWorkspace } from "@/components/admin/booking-workspace";
 import { BookingStatusForm } from "@/components/admin/booking-status-form";
-import { PaymentStatusForm } from "@/components/admin/payment-status-form";
-import { ReportUploadForm } from "@/components/admin/report-upload-form";
-import { formatCurrency, formatDateTime } from "@/lib/format";
+import { BookingReportsPanel } from "@/components/admin/booking-reports-panel";
+import { PaymentPanel } from "@/components/admin/payment-panel";
+import { getBranches } from "@/lib/data/branches";
+import { getPackages, getTests } from "@/lib/data/catalog";
+import { formatDateTime, toNumber } from "@/lib/format";
+
+function toDateInputValue(value: Date | null) {
+  if (!value) return null;
+  return value.toISOString().slice(0, 10);
+}
 
 export default async function AdminBookingDetailPage({
   params,
@@ -16,125 +23,118 @@ export default async function AdminBookingDetailPage({
 }) {
   const { id } = await params;
 
-  const booking = await db.booking.findUnique({
-    where: { id },
-    include: { items: true, branch: true, report: true },
-  });
+  const [booking, branches, tests, packages] = await Promise.all([
+    db.booking.findUnique({
+      where: { id },
+      include: {
+        items: { include: { report: true } },
+        branch: true,
+        payments: { orderBy: { paidAt: "asc" } },
+      },
+    }),
+    getBranches(),
+    getTests(),
+    getPackages(),
+  ]);
 
   if (!booking) notFound();
 
-  return (
-    <div className="max-w-3xl space-y-6">
-      <Link href="/admin/bookings" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-4 w-4" /> Back to bookings
-      </Link>
+  const catalog = [
+    ...packages.map((pkg) => ({
+      type: "package" as const,
+      id: pkg.id,
+      name: pkg.name,
+      nameBn: pkg.nameBn,
+      price: toNumber(pkg.price),
+    })),
+    ...tests.map((test) => ({
+      type: "test" as const,
+      id: test.id,
+      name: test.name,
+      nameBn: test.nameBn,
+      price: toNumber(test.price),
+    })),
+  ];
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{booking.referenceCode}</h1>
-          <p className="text-sm text-muted-foreground">
+  const transactions = booking.payments.map((payment) => ({
+    id: payment.id,
+    kind: payment.kind,
+    amount: Number(payment.amount),
+    method: payment.method,
+    reference: payment.reference,
+    note: payment.note,
+    paidAt: payment.paidAt.toISOString(),
+  }));
+
+  const items = booking.items.map((item) => ({
+    id: item.id,
+    name: item.nameSnapshot,
+    type: (item.packageId ? "package" : "test") as "test" | "package",
+    catalogId: (item.packageId ?? item.testId) as string,
+    price: Number(item.priceSnapshot),
+    hasReport: Boolean(item.report),
+  }));
+
+  const reportItems = booking.items.map((item) => ({
+    id: item.id,
+    name: item.nameSnapshot,
+    type: (item.packageId ? "package" : "test") as "test" | "package",
+    report: item.report ? { fileName: item.report.fileName } : null,
+  }));
+
+  return (
+    <BookingWorkspace
+      header={
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <Link
+            href="/admin/bookings"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" /> Bookings
+          </Link>
+          <div className="h-4 w-px bg-border" />
+          <h1 className="text-lg font-semibold tracking-tight">{booking.referenceCode}</h1>
+          <BookingStatusForm bookingId={booking.id} currentStatus={booking.status} />
+          <p className="text-sm text-muted-foreground sm:ml-auto">
             Booked {formatDateTime(booking.createdAt)}
           </p>
         </div>
-        <Badge className="text-sm">{booking.status.replaceAll("_", " ")}</Badge>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Patient Details</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
-          <Field label="Name" value={booking.patientName} />
-          <Field label="Phone" value={booking.phone} />
-          <Field label="Age" value={booking.age?.toString() ?? "—"} />
-          <Field label="Gender" value={booking.gender ?? "—"} />
-          <Field label="Collection Type" value={booking.collectionType.replaceAll("_", " ")} />
-          <Field label="Branch" value={booking.branch?.name ?? "—"} />
-          {booking.collectionType === "HOME" && (
-            <Field label="Address" value={booking.address ?? "—"} className="sm:col-span-2" />
-          )}
-          <Field
-            label="Preferred Date"
-            value={booking.preferredDate ? formatDateTime(booking.preferredDate) : "—"}
-          />
-          <Field label="Preferred Time" value={booking.preferredTime ?? "—"} />
-          {booking.notes && <Field label="Notes" value={booking.notes} className="sm:col-span-2" />}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Tests &amp; Packages</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="divide-y">
-            {booking.items.map((item) => (
-              <li key={item.id} className="flex items-center justify-between py-2 text-sm">
-                <span>{item.nameSnapshot}</span>
-                <span className="font-medium">{formatCurrency(item.priceSnapshot)}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-3 flex items-center justify-between border-t pt-3 font-semibold">
-            <span>Estimated Total</span>
-            <span>{formatCurrency(booking.estimatedTotal)}</span>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Update Status</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <BookingStatusForm bookingId={booking.id} currentStatus={booking.status} />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Payment</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <PaymentStatusForm
+      }
+      aside={<BookingReportsPanel bookingId={booking.id} items={reportItems} />}
+    >
+      <AdminBookingForm
+        mode="edit"
+        catalog={catalog}
+        branches={branches.map((branch) => ({
+          id: branch.id,
+          name: branch.name,
+        }))}
+        bookingId={booking.id}
+        defaults={{
+          patientName: booking.patientName,
+          phone: booking.phone,
+          age: booking.age,
+          gender: booking.gender,
+          collectionType: booking.collectionType,
+          address: booking.address,
+          branchId: booking.branchId,
+          preferredDate: toDateInputValue(booking.preferredDate),
+          preferredTime: booking.preferredTime,
+          notes: booking.notes,
+        }}
+        invoice={
+          <PaymentPanel
+            key="booking-invoice"
             bookingId={booking.id}
-            currentStatus={booking.paymentStatus}
-            paymentMethod={booking.paymentMethod}
+            estimatedTotal={Number(booking.estimatedTotal)}
+            amountPaid={Number(booking.amountPaid)}
+            discountTotal={Number(booking.discountTotal)}
+            transactions={transactions}
+            items={items}
+            catalog={catalog}
           />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Report</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {booking.report && (
-            <p className="text-sm text-muted-foreground">
-              Current file: <span className="font-medium text-foreground">{booking.report.fileName}</span>{" "}
-              (uploaded {formatDateTime(booking.report.uploadedAt)})
-            </p>
-          )}
-          <ReportUploadForm bookingId={booking.id} hasExistingReport={Boolean(booking.report)} />
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  value,
-  className,
-}: {
-  label: string;
-  value: string;
-  className?: string;
-}) {
-  return (
-    <div className={className}>
-      <p className="text-xs uppercase text-muted-foreground">{label}</p>
-      <p className="font-medium">{value}</p>
-    </div>
+        }
+      />
+    </BookingWorkspace>
   );
 }

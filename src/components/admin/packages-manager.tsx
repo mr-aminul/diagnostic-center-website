@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, type KeyboardEvent, type MouseEvent } from "react";
 import { Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +29,15 @@ export interface AdminTestOption {
   name: string;
 }
 
+function isInteractiveTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  return Boolean(
+    target.closest(
+      "a, button, input, select, textarea, label, [role='button'], [data-row-action]"
+    )
+  );
+}
+
 export function PackagesManager({
   packages,
   testOptions,
@@ -54,46 +64,84 @@ export function PackagesManager({
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {packages.map((pkg) => (
-          <div key={pkg.id} className="overflow-hidden rounded-lg border bg-background">
-            {pkg.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- admin preview of external URLs
-              <img src={pkg.imageUrl} alt="" className="aspect-square w-full object-cover" />
-            ) : null}
-            <div className="p-4">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="font-semibold">{pkg.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {pkg.originalPrice != null && pkg.originalPrice > pkg.price ? (
-                      <>
-                        <span className="line-through">{formatCurrency(pkg.originalPrice)}</span>{" "}
-                        <span className="font-medium text-foreground">{formatCurrency(pkg.price)}</span>
-                      </>
-                    ) : (
-                      formatCurrency(pkg.price)
-                    )}
-                  </p>
-                </div>
-                <p className="text-xs text-muted-foreground">{pkg.isActive ? "Active" : "Inactive"}</p>
-              </div>
-              <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
-                {pkg.tests.map(({ test }) => (
-                  <li key={test.id}>• {test.name}</li>
-                ))}
-              </ul>
-              <div className="mt-4 flex items-center justify-between">
-                <EntityFormDialog
-                  triggerLabel="Edit"
-                  title={`Edit ${pkg.name}`}
-                  action={updatePackage.bind(null, pkg.id)}
-                >
-                  <PackageFields testOptions={testOptions} defaultValues={pkg} />
-                </EntityFormDialog>
-                <ConfirmDeleteButton action={deletePackage.bind(null, pkg.id)} />
-              </div>
-            </div>
-          </div>
+          <PackageCard key={pkg.id} pkg={pkg} testOptions={testOptions} />
         ))}
+      </div>
+    </div>
+  );
+}
+
+function PackageCard({
+  pkg,
+  testOptions,
+}: {
+  pkg: AdminPackage;
+  testOptions: AdminTestOption[];
+}) {
+  const [open, setOpen] = useState(false);
+
+  function onActivate() {
+    setOpen(true);
+  }
+
+  function onClick(event: MouseEvent<HTMLDivElement>) {
+    if (isInteractiveTarget(event.target)) return;
+    onActivate();
+  }
+
+  function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    if (isInteractiveTarget(event.target)) return;
+    event.preventDefault();
+    onActivate();
+  }
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      className="cursor-pointer overflow-hidden rounded-lg border bg-background text-left outline-none transition-colors hover:bg-muted/40 focus-visible:ring-3 focus-visible:ring-ring/50"
+      onClick={onClick}
+      onKeyDown={onKeyDown}
+    >
+      {pkg.imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- admin preview of external URLs
+        <img src={pkg.imageUrl} alt="" className="aspect-square w-full object-cover" />
+      ) : null}
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="font-semibold">{pkg.name}</p>
+            <p className="text-sm text-muted-foreground">
+              {pkg.originalPrice != null && pkg.originalPrice > pkg.price ? (
+                <>
+                  <span className="line-through">{formatCurrency(pkg.originalPrice)}</span>{" "}
+                  <span className="font-medium text-foreground">{formatCurrency(pkg.price)}</span>
+                </>
+              ) : (
+                formatCurrency(pkg.price)
+              )}
+            </p>
+          </div>
+          <p className="text-xs text-muted-foreground">{pkg.isActive ? "Active" : "Inactive"}</p>
+        </div>
+        <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
+          {pkg.tests.map(({ test }) => (
+            <li key={test.id}>• {test.name}</li>
+          ))}
+        </ul>
+        <div data-row-action className="mt-4 flex items-center justify-between">
+          <EntityFormDialog
+            open={open}
+            onOpenChange={setOpen}
+            triggerLabel="Edit"
+            title={`Edit ${pkg.name}`}
+            action={updatePackage.bind(null, pkg.id)}
+          >
+            <PackageFields testOptions={testOptions} defaultValues={pkg} />
+          </EntityFormDialog>
+          <ConfirmDeleteButton action={deletePackage.bind(null, pkg.id)} />
+        </div>
       </div>
     </div>
   );

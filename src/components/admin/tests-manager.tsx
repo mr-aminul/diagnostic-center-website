@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ActionTableRow } from "@/components/admin/admin-table-row";
 import { EntityFormDialog } from "@/components/admin/entity-form-dialog";
 import { ConfirmDeleteButton } from "@/components/admin/confirm-delete-button";
 import { createCategory, createTest, deleteTest, updateTest } from "@/app/admin/(protected)/tests/actions";
@@ -102,29 +104,45 @@ export function TestsManager({
           </TableHeader>
           <TableBody>
             {tests.map((test) => (
-              <TableRow key={test.id}>
-                <TableCell className="font-medium">{test.name}</TableCell>
-                <TableCell className="text-muted-foreground">{test.category.name}</TableCell>
-                <TableCell className="text-right">{formatCurrency(test.price)}</TableCell>
-                <TableCell className="text-muted-foreground">
-                  {test.isActive ? "Active" : "Inactive"}
-                </TableCell>
-                <TableCell className="flex items-center justify-end gap-1">
-                  <EntityFormDialog
-                    triggerLabel="Edit"
-                    title={`Edit ${test.name}`}
-                    action={updateTest.bind(null, test.id)}
-                  >
-                    <TestFields categories={categories} defaultValues={test} />
-                  </EntityFormDialog>
-                  <ConfirmDeleteButton action={deleteTest.bind(null, test.id)} />
-                </TableCell>
-              </TableRow>
+              <TestRow key={test.id} test={test} categories={categories} />
             ))}
           </TableBody>
         </Table>
       </div>
     </div>
+  );
+}
+
+function TestRow({
+  test,
+  categories,
+}: {
+  test: AdminTest;
+  categories: AdminCategory[];
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <ActionTableRow onActivate={() => setOpen(true)}>
+      <TableCell className="font-medium">{test.name}</TableCell>
+      <TableCell className="text-muted-foreground">{test.category.name}</TableCell>
+      <TableCell className="text-right">{formatCurrency(test.price)}</TableCell>
+      <TableCell className="text-muted-foreground">
+        {test.isActive ? "Active" : "Inactive"}
+      </TableCell>
+      <TableCell data-row-action className="flex items-center justify-end gap-1">
+        <EntityFormDialog
+          open={open}
+          onOpenChange={setOpen}
+          triggerLabel="Edit"
+          title={`Edit ${test.name}`}
+          action={updateTest.bind(null, test.id)}
+        >
+          <TestFields categories={categories} defaultValues={test} />
+        </EntityFormDialog>
+        <ConfirmDeleteButton action={deleteTest.bind(null, test.id)} />
+      </TableCell>
+    </ActionTableRow>
   );
 }
 

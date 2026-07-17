@@ -13,11 +13,13 @@ function getSecretKey(): Uint8Array {
 export async function createReportDownloadToken(input: {
   referenceCode: string;
   bookingId: string;
+  bookingItemId: string;
 }): Promise<string> {
   return new SignJWT({
     purpose: "report-download",
     referenceCode: input.referenceCode,
     bookingId: input.bookingId,
+    bookingItemId: input.bookingItemId,
   })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -27,17 +29,23 @@ export async function createReportDownloadToken(input: {
 
 export async function verifyReportDownloadToken(
   token: string
-): Promise<{ referenceCode: string; bookingId: string } | null> {
+): Promise<{
+  referenceCode: string;
+  bookingId: string;
+  bookingItemId: string;
+} | null> {
   try {
     const { payload } = await jwtVerify(token, getSecretKey());
     if (
       payload.purpose === "report-download" &&
       typeof payload.referenceCode === "string" &&
-      typeof payload.bookingId === "string"
+      typeof payload.bookingId === "string" &&
+      typeof payload.bookingItemId === "string"
     ) {
       return {
         referenceCode: payload.referenceCode,
         bookingId: payload.bookingId,
+        bookingItemId: payload.bookingItemId,
       };
     }
     return null;

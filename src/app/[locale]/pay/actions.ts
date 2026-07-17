@@ -3,9 +3,10 @@
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { sendSms } from "@/lib/sms";
-import { siteConfig } from "@/config/site";
 import { lastDigits } from "@/lib/phone";
-import { generateDemoTransactionId, isDemoPayment } from "@/lib/payment";
+import { generateDemoTransactionId, isDemoPaymentResolved } from "@/lib/payment";
+import { getResolvedSiteConfig } from "@/lib/data/site-settings";
+import { syncBookingPaymentTotals } from "@/lib/booking-payments";
 
 const confirmSchema = z.object({
   referenceCode: z.string().trim().min(1).max(30),
@@ -28,7 +29,7 @@ export async function confirmDemoPayment(
   _previousState: DemoPaymentState,
   formData: FormData
 ): Promise<DemoPaymentState> {
-  if (!isDemoPayment()) {
+  if (!(await isDemoPaymentResolved())) {
     return { status: "error", errorMessage: "Demo payments are disabled." };
   }
 
@@ -75,20 +76,36 @@ export async function confirmDemoPayment(
   }
 
   const transactionId = generateDemoTransactionId(parsed.data.method);
+  const methodMap = {
+    bkash: "BKASH",
+    nagad: "NAGAD",
+    card: "CARD",
+  } as const;
+  const remaining = Math.max(
+    0,
+    Number(booking.estimatedTotal) - Number(booking.amountPaid),
+  );
 
-  await db.booking.update({
-    where: { id: booking.id },
+  if (remaining <= 0) {
+    return { status: "success", transactionId };
+  }
+
+  await db.bookingPayment.create({
     data: {
-      paymentStatus: "PAID",
-      notes: booking.notes
-        ? `${booking.notes}\n[demo-payment] ${parsed.data.method} ${transactionId}`
-        : `[demo-payment] ${parsed.data.method} ${transactionId}`,
+      bookingId: booking.id,
+      amount: remaining,
+      method: methodMap[parsed.data.method],
+      reference: transactionId,
+      note: "Demo online payment",
+      paidAt: new Date(),
     },
   });
+  await syncBookingPaymentTotals(booking.id);
 
+  const site = await getResolvedSiteConfig();
   await sendSms(
     booking.phone,
-    `${siteConfig.shortName}: demo payment received for ${referenceCode}. Txn ${transactionId}. (Sandbox — no real charge.)`
+    `${site.shortName}: demo payment received for ${referenceCode}. Txn ${transactionId}. (Sandbox — no real charge.)`
   );
 
   return { status: "success", transactionId };

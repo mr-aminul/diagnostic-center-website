@@ -1,4 +1,5 @@
 import { siteConfig } from "@/config/site";
+import type { ResolvedSiteConfig } from "@/lib/cms/types";
 import { toNumber } from "@/lib/format";
 import type { PackageWithTests, TestWithCategory } from "@/lib/data/catalog";
 import type { SearchHit } from "@/lib/search/types";
@@ -36,7 +37,7 @@ function haystack(...parts: Array<string | null | undefined>) {
     .toLowerCase();
 }
 
-function pageHits(features: typeof siteConfig.features): SearchHit[] {
+function pageHits(features: ResolvedSiteConfig["features"], shortName: string): SearchHit[] {
   const pages: SearchHit[] = [
     {
       id: "page-book",
@@ -166,8 +167,8 @@ function pageHits(features: typeof siteConfig.features): SearchHit[] {
       category: "page",
       title: "About Us",
       titleBn: "আমাদের সম্পর্কে",
-      subtitle: siteConfig.shortName,
-      subtitleBn: siteConfig.shortName,
+      subtitle: shortName,
+      subtitleBn: shortName,
       keywords: haystack("about", "story", "mission", "সম্পর্কে", "মিশন"),
       href: { kind: "route", pathname: "/about" },
       price: null,
@@ -236,10 +237,10 @@ function pageHits(features: typeof siteConfig.features): SearchHit[] {
   return pages;
 }
 
-function contactHits(): SearchHit[] {
+function contactHits(site: ResolvedSiteConfig): SearchHit[] {
   const hits: SearchHit[] = [];
 
-  for (const phone of siteConfig.contact.phones) {
+  for (const phone of site.contact.phones) {
     const digits = phone.replace(/\s/g, "");
     hits.push({
       id: `contact-phone-${digits}`,
@@ -259,10 +260,10 @@ function contactHits(): SearchHit[] {
     category: "contact",
     title: "WhatsApp",
     titleBn: "হোয়াটসঅ্যাপ",
-    subtitle: siteConfig.contact.whatsapp,
-    subtitleBn: siteConfig.contact.whatsapp,
+    subtitle: site.contact.whatsapp,
+    subtitleBn: site.contact.whatsapp,
     keywords: haystack(
-      siteConfig.contact.whatsapp,
+      site.contact.whatsapp,
       "whatsapp",
       "chat",
       "হোয়াটসঅ্যাপ",
@@ -270,7 +271,7 @@ function contactHits(): SearchHit[] {
     ),
     href: {
       kind: "external",
-      url: `https://wa.me/${siteConfig.contact.whatsapp.replace(/\D/g, "")}`,
+      url: `https://wa.me/${site.contact.whatsapp.replace(/\D/g, "")}`,
     },
     price: null,
   });
@@ -278,25 +279,25 @@ function contactHits(): SearchHit[] {
   hits.push({
     id: "contact-email",
     category: "contact",
-    title: siteConfig.contact.email,
-    titleBn: siteConfig.contact.email,
+    title: site.contact.email,
+    titleBn: site.contact.email,
     subtitle: "Email us",
     subtitleBn: "ইমেইল করুন",
-    keywords: haystack(siteConfig.contact.email, "email", "mail", "ইমেইল"),
-    href: { kind: "external", url: `mailto:${siteConfig.contact.email}` },
+    keywords: haystack(site.contact.email, "email", "mail", "ইমেইল"),
+    href: { kind: "external", url: `mailto:${site.contact.email}` },
     price: null,
   });
 
   hits.push({
     id: "contact-hours",
     category: "contact",
-    title: siteConfig.hours.en,
-    titleBn: siteConfig.hours.bn,
+    title: site.hours.en,
+    titleBn: site.hours.bn,
     subtitle: "Working hours",
     subtitleBn: "কর্মঘণ্টা",
     keywords: haystack(
-      siteConfig.hours.en,
-      siteConfig.hours.bn,
+      site.hours.en,
+      site.hours.bn,
       "hours",
       "open",
       "timing",
@@ -317,16 +318,18 @@ export function buildSearchIndex({
   doctors,
   categories,
   branches,
+  site,
 }: {
   tests: TestWithCategory[];
   packages: PackageWithTests[];
   doctors: DoctorRow[];
   categories: CategoryRow[];
   branches: BranchRow[];
+  site: ResolvedSiteConfig;
 }): SearchHit[] {
   const hits: SearchHit[] = [
-    ...pageHits(siteConfig.features),
-    ...contactHits(),
+    ...pageHits(site.features, site.shortName),
+    ...contactHits(site),
   ];
 
   for (const test of tests) {

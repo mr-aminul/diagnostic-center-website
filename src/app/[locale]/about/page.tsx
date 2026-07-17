@@ -4,7 +4,9 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { Award, ShieldCheck } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
-import { siteConfig, type Locale } from "@/config/site";
+import type { Locale } from "@/config/site";
+import { getResolvedSiteConfig } from "@/lib/data/site-settings";
+import { pickLocalized } from "@/lib/cms/types";
 import { buildPageMetadata } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -15,6 +17,8 @@ export default async function AboutPage() {
   const t = await getTranslations("about");
   const tNav = await getTranslations("nav");
   const locale = (await getLocale()) as Locale;
+  const site = await getResolvedSiteConfig();
+  const { about } = site;
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-10 sm:px-6 lg:px-8 lg:pb-24 lg:pt-14">
@@ -37,13 +41,13 @@ export default async function AboutPage() {
               {t("title")}
             </p>
             <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-              {siteConfig.name}
+              {site.name}
             </h1>
             <p className="mt-3 text-lg text-muted-foreground sm:text-xl">
-              {siteConfig.tagline[locale]}
+              {site.tagline[locale]}
             </p>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground">
-              {siteConfig.description[locale]}
+              {site.description[locale]}
             </p>
 
             <dl className="mt-8 divide-y divide-border/80 border-y border-border/80">
@@ -52,9 +56,11 @@ export default async function AboutPage() {
                   <Award className="h-5 w-5" aria-hidden />
                 </div>
                 <div className="min-w-0">
-                  <dt className="text-sm font-semibold">{t("missionTitle")}</dt>
+                  <dt className="text-sm font-semibold">
+                    {pickLocalized(about.missionTitle, locale)}
+                  </dt>
                   <dd className="mt-1 text-sm leading-relaxed text-muted-foreground sm:text-base">
-                    {t("missionBody")}
+                    {pickLocalized(about.missionBody, locale)}
                   </dd>
                 </div>
               </div>
@@ -64,9 +70,11 @@ export default async function AboutPage() {
                   <ShieldCheck className="h-5 w-5" aria-hidden />
                 </div>
                 <div className="min-w-0">
-                  <dt className="text-sm font-semibold">{t("accreditationTitle")}</dt>
+                  <dt className="text-sm font-semibold">
+                    {pickLocalized(about.accreditationTitle, locale)}
+                  </dt>
                   <dd className="mt-1 text-sm leading-relaxed text-muted-foreground sm:text-base">
-                    {t("accreditationBody")}
+                    {pickLocalized(about.accreditationBody, locale)}
                   </dd>
                 </div>
               </div>

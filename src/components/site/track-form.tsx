@@ -42,10 +42,16 @@ import {
   todayDateInputValue,
 } from "@/lib/time-slots";
 import { siteConfig, type Locale } from "@/config/site";
-import { isDemoPayment } from "@/lib/payment";
 import { DemoPaymentCheckout } from "@/components/site/demo-payment-checkout";
+import {
+  flattenReadyReports,
+  PatientReportView,
+  reportDownloadHref,
+} from "@/components/site/patient-report-view";
 import { DEV_SAMPLE, isDevToolsEnabled } from "@/lib/dev-tools";
 import { cn } from "@/lib/utils";
+
+type PortalTab = "reports" | "visits";
 
 const idle: TrackPortalState = { status: "idle" };
 
@@ -70,9 +76,11 @@ function phoneFrom(state: TrackPortalState): string {
 export function TrackForm({
   locale,
   initialPortal = idle,
+  demoPayment = false,
 }: {
   locale: Locale;
   initialPortal?: TrackPortalState;
+  demoPayment?: boolean;
 }) {
   const t = useTranslations("track");
   const tCommon = useTranslations("common");
@@ -102,6 +110,9 @@ export function TrackForm({
   const [rescheduleId, setRescheduleId] = useState<string | null>(null);
   const [payId, setPayId] = useState<string | null>(null);
   const [localPaid, setLocalPaid] = useState<Record<string, string>>({});
+  const [portalTab, setPortalTab] = useState<PortalTab>("reports");
+  const [viewingReportId, setViewingReportId] = useState<string | null>(null);
+  const [tabInitialized, setTabInitialized] = useState(false);
 
   const portalState: TrackPortalState = signedOut ? idle : initialPortal;
 
@@ -143,17 +154,43 @@ export function TrackForm({
     (requestState.status === "otp_sent" && verifyState.status !== "verified");
 
   const isVerified = bookings.length > 0 || listState.status === "updated";
+  const readyReports = flattenReadyReports(bookings);
+  const pendingReports = bookings.filter(
+    (booking) =>
+      booking.status !== "CANCELLED" &&
+      booking.items.some((item) => !item.hasReport),
+  );
+
+  if (isVerified && !tabInitialized) {
+    setTabInitialized(true);
+    setPortalTab(readyReports.length > 0 ? "reports" : "visits");
+  }
 
   const focusBookingId =
     listState.status === "updated" ? listState.focusBookingId ?? null : null;
   if (focusBookingId && focusBookingId !== appliedFocusId) {
     setAppliedFocusId(focusBookingId);
     setExpandedId(focusBookingId);
+    const focused = bookings.find((booking) => booking.id === focusBookingId);
+    const firstReadyItem = focused?.items.find((item) => item.hasReport);
+    if (firstReadyItem) {
+      setPortalTab("reports");
+      setViewingReportId(firstReadyItem.id);
+    } else {
+      setPortalTab("visits");
+      setViewingReportId(null);
+    }
   }
 
   if (isVerified) {
     return (
       <div className="space-y-6">
+        {isDevToolsEnabled() && (
+          <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            {t("demoModeNoticeVerified")}
+          </p>
+        )}
+
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-sm text-muted-foreground">{t("signedInAs")}</p>
@@ -165,6 +202,9 @@ export function TrackForm({
               setSignedOut(true);
               setPhone("");
               setOtp("");
+              setViewingReportId(null);
+              setPortalTab("reports");
+              setTabInitialized(false);
             }}
           >
             <Button type="submit" variant="outline" size="sm">
@@ -204,13 +244,73 @@ export function TrackForm({
           </p>
         )}
 
-        <div>
-          <h2 className="text-lg font-semibold">{t("historyTitle")}</h2>
-          <p className="text-sm text-muted-foreground">{t("historySubtitle")}</p>
-        </div>
+        {!viewingReportId && (
+          <div
+            className="flex gap-1 rounded-lg border bg-secondary/30 p-1"
+            role="tablist"
+            aria-label={t("portalTabsLabel")}
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={portalTab === "reports"}
+              className={cn(
+                "flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                portalTab === "reports"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+              onClick={() => setPortalTab("reports")}
+            >
+              <FileText className="h-4 w-4" aria-hidden />
+              {t("tabReports")}
+              {readyReports.length > 0 && (
+                <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
+                  {readyReports.length}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={portalTab === "visits"}
+              className={cn(
+                "flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                portalTab === "visits"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+              onClick={() => {
+                setPortalTab("visits");
+                setViewingReportId(null);
+              }}
+            >
+              {t("tabVisits")}
+              <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+                {bookings.length}
+              </span>
+            </button>
+          </div>
+        )}
 
-        <div className="space-y-3">
-          {bookings.map((booking) => {
+        {portalTab === "reports" ? (
+          <PatientReportView
+            locale={locale}
+            readyReports={readyReports}
+            pendingReports={pendingReports}
+            viewingItemId={viewingReportId}
+            onView={setViewingReportId}
+            onClose={() => setViewingReportId(null)}
+          />
+        ) : null}
+
+        {portalTab === "visits" ? (
+          <div className="space-y-3">
+            <div>
+              <h2 className="text-lg font-semibold">{t("historyTitle")}</h2>
+              <p className="text-sm text-muted-foreground">{t("historySubtitle")}</p>
+            </div>
+            {bookings.map((booking) => {
             const expanded = expandedId === booking.id;
             const isCancelled = booking.status === "CANCELLED";
             const currentStep = statusStepIndex(booking.status);
@@ -293,16 +393,49 @@ export function TrackForm({
                       </div>
                     )}
 
-                    <ul className="space-y-1 text-sm">
+                    <ul className="space-y-2 text-sm">
                       {booking.items.map((item) => (
                         <li
-                          key={`${booking.id}-${item.name}-${item.price}`}
-                          className="flex justify-between gap-3"
+                          key={item.id}
+                          className="flex flex-col gap-2 rounded-lg border bg-background px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
                         >
-                          <span>{item.name}</span>
-                          <span className="text-muted-foreground">
-                            {formatCurrency(item.price, locale)}
-                          </span>
+                          <div className="min-w-0">
+                            <p className="font-medium">{item.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatCurrency(item.price, locale)}
+                              {item.hasReport
+                                ? ` · ${t("reportReadyBadge")}`
+                                : !isCancelled
+                                  ? ` · ${t("reportPending")}`
+                                  : null}
+                            </p>
+                          </div>
+                          {item.hasReport ? (
+                            <div className="flex shrink-0 gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => {
+                                  setPortalTab("reports");
+                                  setViewingReportId(item.id);
+                                }}
+                              >
+                                <FileText className="h-4 w-4" />
+                                {t("viewReport")}
+                              </Button>
+                              <a
+                                href={reportDownloadHref(booking, item)}
+                                className={buttonVariants({
+                                  variant: "outline",
+                                  size: "sm",
+                                })}
+                                download={item.reportFileName}
+                              >
+                                <Download className="h-4 w-4" />
+                                {t("downloadReport")}
+                              </a>
+                            </div>
+                          ) : null}
                         </li>
                       ))}
                     </ul>
@@ -311,7 +444,7 @@ export function TrackForm({
                       {booking.paymentMethod === "ONLINE"
                         ? t("paymentOnline", {
                             status: t(
-                              `paymentStatus.${paymentStatus as "UNPAID" | "PENDING_ONLINE" | "PAID" | "WAIVED"}`
+                              `paymentStatus.${paymentStatus as "UNPAID" | "PENDING_ONLINE" | "PARTIAL" | "PAID" | "WAIVED"}`
                             ),
                           })
                         : t("paymentCash")}
@@ -324,28 +457,10 @@ export function TrackForm({
                       </p>
                     )}
 
-                    {booking.hasReport ? (
-                      <a
-                        href={
-                          booking.downloadToken
-                            ? `/api/reports/download?token=${encodeURIComponent(booking.downloadToken)}`
-                            : `/api/reports/download?bookingId=${encodeURIComponent(booking.id)}`
-                        }
-                        className={buttonVariants({ className: "w-full" })}
-                      >
-                        <Download className="h-4 w-4" />
-                        {t("downloadReport")}
-                      </a>
-                    ) : (
-                      !isCancelled && (
-                        <p className="text-sm text-muted-foreground">{t("reportPending")}</p>
-                      )
-                    )}
-
                     {booking.paymentMethod === "ONLINE" &&
                       !paidTxn &&
                       booking.paymentStatus === "PENDING_ONLINE" &&
-                      isDemoPayment() &&
+                      demoPayment &&
                       !isCancelled && (
                         <div className="space-y-3">
                           {payId !== booking.id ? (
@@ -493,12 +608,19 @@ export function TrackForm({
             );
           })}
         </div>
+        ) : null}
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6">
+      {isDevToolsEnabled() && (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          {t("demoModeNotice")}
+        </p>
+      )}
+
       {!otpSent ? (
         <form action={requestAction} className="space-y-4">
           <input type="hidden" name="locale" value={locale} />

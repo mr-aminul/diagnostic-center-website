@@ -1,11 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import { siteConfig } from "@/config/site";
+import type { SiteConfig } from "@/config/site";
 
 /**
- * Turns a brand color from site.config.ts into a readable foreground color
- * (near-white or near-black) using relative luminance, so a new center only
- * ever has to pick brand colors — never worry about text contrast.
+ * Turns a brand color into a readable foreground color
+ * (near-white or near-black) using relative luminance.
  */
 function getReadableForeground(hex: string): string {
   const value = hex.replace("#", "");
@@ -21,23 +21,43 @@ function getReadableForeground(hex: string): string {
 
 /**
  * Builds the CSS that overrides the neutral shadcn defaults in globals.css
- * with this center's brand colors. Rendered once as an inline <style> tag
- * in the root layout — no Tailwind rebuild needed to re-brand the site.
+ * with this center's brand colors (light + dark).
+ *
+ * Dark brand rules use `html.dark` so they beat the generic `.dark` neutrals
+ * in globals.css. Future UI should keep using semantic tokens
+ * (`bg-background`, `text-foreground`, `bg-primary`, …) — those flip
+ * automatically when the admin theme adds/removes `.dark` on `<html>`.
  */
-export function buildThemeCss(): string {
-  const { primary, secondary, accent, radius } = siteConfig.theme;
+export function buildThemeCss(theme: SiteConfig["theme"] = siteConfig.theme): string {
+  const { primary, secondary, accent, radius } = theme;
+  const primaryFg = getReadableForeground(primary);
+  const secondaryFg = getReadableForeground(secondary);
+  const accentFg = getReadableForeground(accent);
 
   return `:root {
   --primary: ${primary};
-  --primary-foreground: ${getReadableForeground(primary)};
+  --primary-foreground: ${primaryFg};
   --secondary: ${secondary};
-  --secondary-foreground: ${getReadableForeground(secondary)};
+  --secondary-foreground: ${secondaryFg};
   --accent: ${accent};
-  --accent-foreground: ${getReadableForeground(accent)};
+  --accent-foreground: ${accentFg};
   --ring: ${primary};
   --radius: ${radius};
   --sidebar-primary: ${primary};
-  --sidebar-primary-foreground: ${getReadableForeground(primary)};
+  --sidebar-primary-foreground: ${primaryFg};
+  --sidebar-ring: ${primary};
+}
+
+html.dark {
+  --primary: ${primary};
+  --primary-foreground: ${primaryFg};
+  --secondary: color-mix(in oklab, ${primary} 16%, oklch(0.22 0 0));
+  --secondary-foreground: oklch(0.985 0 0);
+  --accent: color-mix(in oklab, ${accent} 42%, oklch(0.28 0 0));
+  --accent-foreground: oklch(0.985 0 0);
+  --ring: ${primary};
+  --sidebar-primary: ${primary};
+  --sidebar-primary-foreground: ${primaryFg};
   --sidebar-ring: ${primary};
 }`;
 }
@@ -45,15 +65,15 @@ export function buildThemeCss(): string {
 /**
  * A new center starts with no logo file, so header/footer fall back to a
  * stethoscope mark. Once a center drops a real file at public/logo.svg
- * (per site.config.ts), this flips the server-rendered UI over to the
+ * (per site config), this flips the server-rendered UI over to the
  * actual image with no code changes needed.
  */
 let customLogoCached: boolean | undefined;
 
-export function hasCustomLogo(): boolean {
+export function hasCustomLogo(logoSrc: string = siteConfig.logo.src): boolean {
   if (customLogoCached !== undefined) return customLogoCached;
   try {
-    const relativePath = siteConfig.logo.src.replace(/^\//, "");
+    const relativePath = logoSrc.replace(/^\//, "");
     customLogoCached = fs.existsSync(
       path.join(process.cwd(), "public", relativePath),
     );

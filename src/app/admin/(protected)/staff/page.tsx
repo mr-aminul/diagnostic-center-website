@@ -8,27 +8,29 @@ export default async function AdminStaffPage() {
   if (!session) redirect("/admin/login");
   if (session.role !== "ADMIN") redirect("/admin");
 
-  const staff = await db.staffUser.findMany({
-    orderBy: { createdAt: "asc" },
-    select: {
-      id: true,
-      name: true,
-      phone: true,
-      email: true,
-      role: true,
-      isActive: true,
-    },
-  });
+  const [staff, branches] = await Promise.all([
+    db.staffUser.findMany({
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        email: true,
+        role: true,
+        department: true,
+        jobTitle: true,
+        employeeCode: true,
+        branchId: true,
+        isActive: true,
+        branch: { select: { id: true, name: true } },
+      },
+    }),
+    db.branch.findMany({
+      where: { isActive: true },
+      orderBy: [{ isMain: "desc" }, { name: "asc" }],
+      select: { id: true, name: true },
+    }),
+  ]);
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold">Staff users</h1>
-        <p className="text-sm text-muted-foreground">
-          Invite colleagues, reset passwords, and deactivate accounts. Admins only.
-        </p>
-      </div>
-      <StaffManager staff={staff} />
-    </div>
-  );
+  return <StaffManager staff={staff} branches={branches} currentUserId={session.userId} />;
 }

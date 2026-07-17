@@ -6,19 +6,75 @@ import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { requireAdmin, requireSession } from "@/lib/auth";
 import { lastDigits } from "@/lib/phone";
+import { STAFF_DEPARTMENTS, STAFF_ROLES } from "@/lib/staff";
 
 export interface StaffActionState {
   status: "idle" | "success" | "error";
   error?: string;
 }
 
+const optionalText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .optional()
+    .transform((value) => (value && value.length > 0 ? value : null));
+
+const optionalBranchId = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value) => (value && value.length > 0 && value !== "none" ? value : null));
+
 const inviteSchema = z.object({
   name: z.string().trim().min(1).max(120),
   phone: z.string().trim().min(6).max(20),
-  email: z.string().trim().email().optional().or(z.literal("")),
-  role: z.enum(["ADMIN", "STAFF", "TECHNICIAN"]),
+  email: z.string().trim().email().max(200),
+  role: z.enum(STAFF_ROLES),
+  department: z.enum(STAFF_DEPARTMENTS),
+  jobTitle: optionalText(120),
+  employeeCode: optionalText(40),
+  branchId: optionalBranchId,
   password: z.string().min(8).max(72),
 });
+
+const updateSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  phone: z.string().trim().min(6).max(20),
+  email: z.string().trim().email().max(200),
+  role: z.enum(STAFF_ROLES),
+  department: z.enum(STAFF_DEPARTMENTS),
+  jobTitle: optionalText(120),
+  employeeCode: optionalText(40),
+  branchId: optionalBranchId,
+  isActive: z.enum(["true", "false"]),
+});
+
+async function assertBranchExists(branchId: string | null): Promise<StaffActionState | null> {
+  if (!branchId) return null;
+  const branch = await db.branch.findUnique({ where: { id: branchId }, select: { id: true } });
+  if (!branch) return { status: "error", error: "Selected branch was not found." };
+  return null;
+}
+
+async function assertEmployeeCodeAvailable(
+  employeeCode: string | null,
+  excludeStaffId?: string
+): Promise<StaffActionState | null> {
+  if (!employeeCode) return null;
+  const taken = await db.staffUser.findFirst({
+    where: {
+      employeeCode,
+      ...(excludeStaffId ? { NOT: { id: excludeStaffId } } : {}),
+    },
+    select: { id: true },
+  });
+  if (taken) {
+    return { status: "error", error: "A staff user with this employee code already exists." };
+  }
+  return null;
+}
 
 export async function inviteStaff(
   _previousState: StaffActionState,
@@ -29,8 +85,12 @@ export async function inviteStaff(
   const parsed = inviteSchema.safeParse({
     name: formData.get("name"),
     phone: formData.get("phone"),
-    email: formData.get("email") || "",
+    email: formData.get("email"),
     role: formData.get("role"),
+    department: formData.get("department"),
+    jobTitle: formData.get("jobTitle") || "",
+    employeeCode: formData.get("employeeCode") || "",
+    branchId: formData.get("branchId") || "",
     password: formData.get("password"),
   });
 
@@ -42,18 +102,33 @@ export async function inviteStaff(
     return { status: "error", error: "Enter a valid phone number." };
   }
 
-  const existing = await db.staffUser.findUnique({ where: { phone: parsed.data.phone } });
-  if (existing) {
+  const existingPhone = await db.staffUser.findUnique({ where: { phone: parsed.data.phone } });
+  if (existingPhone) {
     return { status: "error", error: "A staff user with this phone already exists." };
   }
+
+  const existingEmail = await db.staffUser.findUnique({ where: { email: parsed.data.email } });
+  if (existingEmail) {
+    return { status: "error", error: "A staff user with this email already exists." };
+  }
+
+  const branchError = await assertBranchExists(parsed.data.branchId);
+  if (branchError) return branchError;
+
+  const codeError = await assertEmployeeCodeAvailable(parsed.data.employeeCode);
+  if (codeError) return codeError;
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 10);
   await db.staffUser.create({
     data: {
       name: parsed.data.name,
       phone: parsed.data.phone,
-      email: parsed.data.email || null,
+      email: parsed.data.email,
       role: parsed.data.role,
+      department: parsed.data.department,
+      jobTitle: parsed.data.jobTitle,
+      employeeCode: parsed.data.employeeCode,
+      branchId: parsed.data.branchId,
       passwordHash,
     },
   });
@@ -62,18 +137,74 @@ export async function inviteStaff(
   return { status: "success" };
 }
 
-export async function setStaffActive(
+export async function updateStaff(
   staffId: string,
-  isActive: boolean
+  _previousState: StaffActionState,
+  formData: FormData
 ): Promise<StaffActionState> {
   const session = await requireAdmin();
+
+  const parsed = updateSchema.safeParse({
+    name: formData.get("name"),
+    phone: formData.get("phone"),
+    email: formData.get("email"),
+    role: formData.get("role"),
+    department: formData.get("department"),
+    jobTitle: formData.get("jobTitle") || "",
+    employeeCode: formData.get("employeeCode") || "",
+    branchId: formData.get("branchId") || "",
+    isActive: formData.get("isActive"),
+  });
+
+  if (!parsed.success) {
+    return { status: "error", error: "Check the form fields and try again." };
+  }
+
+  const isActive = parsed.data.isActive === "true";
+
   if (session.userId === staffId && !isActive) {
     return { status: "error", error: "You cannot deactivate your own account." };
   }
 
+  if (lastDigits(parsed.data.phone).length < 10) {
+    return { status: "error", error: "Enter a valid phone number." };
+  }
+
+  const phoneTaken = await db.staffUser.findFirst({
+    where: { phone: parsed.data.phone, NOT: { id: staffId } },
+    select: { id: true },
+  });
+  if (phoneTaken) {
+    return { status: "error", error: "A staff user with this phone already exists." };
+  }
+
+  const emailTaken = await db.staffUser.findFirst({
+    where: { email: parsed.data.email, NOT: { id: staffId } },
+    select: { id: true },
+  });
+  if (emailTaken) {
+    return { status: "error", error: "A staff user with this email already exists." };
+  }
+
+  const branchError = await assertBranchExists(parsed.data.branchId);
+  if (branchError) return branchError;
+
+  const codeError = await assertEmployeeCodeAvailable(parsed.data.employeeCode, staffId);
+  if (codeError) return codeError;
+
   await db.staffUser.update({
     where: { id: staffId },
-    data: { isActive },
+    data: {
+      name: parsed.data.name,
+      phone: parsed.data.phone,
+      email: parsed.data.email,
+      role: parsed.data.role,
+      department: parsed.data.department,
+      jobTitle: parsed.data.jobTitle,
+      employeeCode: parsed.data.employeeCode,
+      branchId: parsed.data.branchId,
+      isActive,
+    },
   });
 
   revalidatePath("/admin/staff");

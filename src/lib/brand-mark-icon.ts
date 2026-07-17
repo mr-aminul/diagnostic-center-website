@@ -21,6 +21,7 @@ function getReadableForeground(hex: string): string {
 /**
  * SVG for the stethoscope-in-rounded-square mark used in the header when no
  * custom logo.svg is present. Sized for favicon / app icon use.
+ * Uses siteConfig defaults (favicon is generated at build/request without CMS await).
  */
 export function buildBrandMarkIconSvg(size = 32): string {
   const background = siteConfig.theme.primary;

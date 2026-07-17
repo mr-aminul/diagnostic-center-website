@@ -1,4 +1,5 @@
 import { siteConfig } from "@/config/site";
+import { getResolvedSiteConfig } from "@/lib/data/site-settings";
 
 /**
  * Payment integration surface.
@@ -17,12 +18,18 @@ export interface PaymentCheckoutSession {
   sessionId: string;
 }
 
+/** Sync fallback for code paths that cannot await CMS settings. Prefer async helpers. */
 export function getPaymentProvider(): PaymentProviderId {
   return siteConfig.payment.provider;
 }
 
 export function isDemoPayment(): boolean {
   return siteConfig.features.onlinePayment && getPaymentProvider() === "demo";
+}
+
+export async function isDemoPaymentResolved(): Promise<boolean> {
+  const site = await getResolvedSiteConfig();
+  return site.features.onlinePayment && site.payment.provider === "demo";
 }
 
 /**
@@ -35,7 +42,8 @@ export async function createCheckoutSession(input: {
   amount: number;
   customerPhone: string;
 }): Promise<PaymentCheckoutSession> {
-  const provider = getPaymentProvider();
+  const site = await getResolvedSiteConfig();
+  const provider = site.payment.provider;
 
   if (provider === "demo") {
     return {
@@ -44,15 +52,12 @@ export async function createCheckoutSession(input: {
     };
   }
 
-  // Live gateway hook — replace with real API call when credentials exist.
   throw new Error(
-    "Live payment provider is not configured. Set siteConfig.payment.provider to \"demo\" or implement createCheckoutSession for your gateway."
+    "Live payment provider is not configured. Set payment provider to \"demo\" in admin Site settings or implement createCheckoutSession for your gateway.",
   );
 }
 
 export function generateDemoTransactionId(method: string): string {
-  const prefix = method.toUpperCase().slice(0, 3);
   const stamp = Date.now().toString(36).toUpperCase();
-  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `${prefix}-${stamp}${rand}`;
+  return `DEMO-${method.toUpperCase()}-${stamp}`;
 }

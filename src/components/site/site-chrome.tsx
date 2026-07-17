@@ -5,11 +5,17 @@ import { WhatsappButton } from "@/components/site/whatsapp-button";
 import { Toaster } from "@/components/ui/sonner";
 
 /** Persistent client chrome — stays mounted across soft navigations. */
-export function SiteChrome() {
+export function SiteChrome({
+  whatsapp,
+  doctorsPage,
+}: {
+  whatsapp: string;
+  doctorsPage: boolean;
+}) {
   return (
     <>
-      <MobileBottomNav />
-      <WhatsappButton />
+      <MobileBottomNav whatsapp={whatsapp} doctorsPage={doctorsPage} />
+      <WhatsappButton whatsapp={whatsapp} />
       <Toaster />
     </>
   );

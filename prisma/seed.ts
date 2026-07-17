@@ -3,10 +3,16 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { siteConfig } from "../src/config/site";
+import {
+  DEFAULT_FAQ_ITEMS,
+  DEFAULT_TESTIMONIALS,
+  getDefaultCmsSettings,
+} from "../src/lib/cms/defaults";
 import { DEV_SAMPLE } from "../src/lib/dev-tools";
 import categoriesData from "./seed-data/categories.json";
 import doctorsData from "./seed-data/doctors.json";
 import packagesData from "./seed-data/packages.json";
+import staffData from "./seed-data/staff.json";
 import testsData from "./seed-data/tests.json";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
@@ -145,6 +151,46 @@ async function seedDoctors() {
   console.log(`Seeded ${doctorsData.length} doctors.`);
 }
 
+async function seedCmsContent() {
+  const defaults = getDefaultCmsSettings();
+  await db.siteSettings.upsert({
+    where: { id: "default" },
+    update: {},
+    create: {
+      id: "default",
+      branding: defaults.branding as object,
+      contact: defaults.contact as object,
+      features: defaults.features as object,
+      payment: defaults.payment as object,
+      seo: defaults.seo as object,
+      about: defaults.about as object,
+      homeCollection: defaults.homeCollection as object,
+    },
+  });
+
+  const faqCount = await db.faqItem.count();
+  if (faqCount === 0) {
+    await db.faqItem.createMany({
+      data: DEFAULT_FAQ_ITEMS.map((item, index) => ({
+        ...item,
+        sortOrder: index,
+      })),
+    });
+  }
+
+  const testimonialCount = await db.testimonial.count();
+  if (testimonialCount === 0) {
+    await db.testimonial.createMany({
+      data: DEFAULT_TESTIMONIALS.map((item, index) => ({
+        ...item,
+        sortOrder: index,
+      })),
+    });
+  }
+
+  console.log("Seeded CMS site settings, FAQ, and testimonials.");
+}
+
 async function seedAdminUser() {
   const existingAdmin = await db.staffUser.findFirst({ where: { role: "ADMIN" } });
   if (existingAdmin) {
@@ -154,6 +200,7 @@ async function seedAdminUser() {
 
   const name = process.env.SEED_ADMIN_NAME;
   const phone = process.env.SEED_ADMIN_PHONE;
+  const email = process.env.SEED_ADMIN_EMAIL || null;
   const password = process.env.SEED_ADMIN_PASSWORD;
 
   if (!name || !phone || !password) {
@@ -165,9 +212,64 @@ async function seedAdminUser() {
 
   const passwordHash = await bcrypt.hash(password, 12);
   await db.staffUser.create({
-    data: { name, phone, passwordHash, role: "ADMIN" },
+    data: {
+      name,
+      phone,
+      email,
+      passwordHash,
+      role: "ADMIN",
+      department: "ADMINISTRATION",
+      jobTitle: "Bootstrap administrator",
+    },
   });
   console.log(`Created bootstrap admin user "${name}" (${phone}). Change this password after first login.`);
+}
+
+/** Demo staff covering every role × active/inactive combination. */
+async function seedStaffUsers() {
+  const password =
+    process.env.SEED_STAFF_PASSWORD || process.env.SEED_ADMIN_PASSWORD || "change-this-password";
+  const passwordHash = await bcrypt.hash(password, 12);
+  const mainBranchId = siteConfig.branches.find((branch) => branch.isMain)?.id ?? null;
+
+  for (const user of staffData) {
+    const branchId =
+      user.branchId === null || user.branchId === undefined
+        ? null
+        : user.branchId === "main"
+          ? mainBranchId
+          : user.branchId;
+
+    const profile = {
+      name: user.name,
+      phone: user.phone,
+      email: user.email,
+      role: user.role as "ADMIN" | "STAFF" | "TECHNICIAN",
+      department: user.department as
+        | "RECEPTION"
+        | "LABORATORY"
+        | "RADIOLOGY"
+        | "SAMPLE_COLLECTION"
+        | "BILLING"
+        | "ADMINISTRATION"
+        | "CUSTOMER_CARE",
+      jobTitle: user.jobTitle,
+      employeeCode: user.employeeCode,
+      branchId,
+      isActive: user.isActive,
+      passwordHash,
+    };
+
+    await db.staffUser.upsert({
+      where: { id: user.id },
+      update: profile,
+      create: { id: user.id, ...profile },
+    });
+  }
+
+  console.log(
+    `Seeded ${staffData.length} demo staff users (password from SEED_STAFF_PASSWORD / SEED_ADMIN_PASSWORD).`
+  );
 }
 
 /** Sample visits for the patient-portal "fill" flow on the demo site. */
@@ -304,7 +406,9 @@ async function main() {
   const testIdByName = await seedCategoriesAndTests();
   await seedPackages(testIdByName);
   await seedDoctors();
+  await seedCmsContent();
   await seedAdminUser();
+  await seedStaffUsers();
   await seedDemoPatientBookings(testIdByName);
 }
 

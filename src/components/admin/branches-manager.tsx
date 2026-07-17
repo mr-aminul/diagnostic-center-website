@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, type KeyboardEvent, type MouseEvent } from "react";
 import { Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +20,15 @@ export interface AdminBranch {
   phone: string;
   mapUrl: string | null;
   isMain: boolean;
+}
+
+function isInteractiveTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  return Boolean(
+    target.closest(
+      "a, button, input, select, textarea, label, [role='button'], [data-row-action]"
+    )
+  );
 }
 
 export function BranchesManager({ branches }: { branches: AdminBranch[] }) {
@@ -41,25 +51,57 @@ export function BranchesManager({ branches }: { branches: AdminBranch[] }) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         {branches.map((branch) => (
-          <div key={branch.id} className="rounded-lg border bg-background p-4">
-            <div className="flex items-start justify-between gap-2">
-              <p className="font-semibold">{branch.name}</p>
-              {branch.isMain && <Badge>Main</Badge>}
-            </div>
-            <p className="mt-2 text-sm text-muted-foreground">{branch.address}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{branch.phone}</p>
-            <div className="mt-4 flex items-center justify-between">
-              <EntityFormDialog
-                triggerLabel="Edit"
-                title={`Edit ${branch.name}`}
-                action={updateBranch.bind(null, branch.id)}
-              >
-                <BranchFields defaultValues={branch} />
-              </EntityFormDialog>
-              <ConfirmDeleteButton action={deleteBranch.bind(null, branch.id)} />
-            </div>
-          </div>
+          <BranchCard key={branch.id} branch={branch} />
         ))}
+      </div>
+    </div>
+  );
+}
+
+function BranchCard({ branch }: { branch: AdminBranch }) {
+  const [open, setOpen] = useState(false);
+
+  function onActivate() {
+    setOpen(true);
+  }
+
+  function onClick(event: MouseEvent<HTMLDivElement>) {
+    if (isInteractiveTarget(event.target)) return;
+    onActivate();
+  }
+
+  function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    if (isInteractiveTarget(event.target)) return;
+    event.preventDefault();
+    onActivate();
+  }
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      className="cursor-pointer rounded-lg border bg-background p-4 text-left outline-none transition-colors hover:bg-muted/40 focus-visible:ring-3 focus-visible:ring-ring/50"
+      onClick={onClick}
+      onKeyDown={onKeyDown}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p className="font-semibold">{branch.name}</p>
+        {branch.isMain && <Badge>Main</Badge>}
+      </div>
+      <p className="mt-2 text-sm text-muted-foreground">{branch.address}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{branch.phone}</p>
+      <div data-row-action className="mt-4 flex items-center justify-between">
+        <EntityFormDialog
+          open={open}
+          onOpenChange={setOpen}
+          triggerLabel="Edit"
+          title={`Edit ${branch.name}`}
+          action={updateBranch.bind(null, branch.id)}
+        >
+          <BranchFields defaultValues={branch} />
+        </EntityFormDialog>
+        <ConfirmDeleteButton action={deleteBranch.bind(null, branch.id)} />
       </div>
     </div>
   );

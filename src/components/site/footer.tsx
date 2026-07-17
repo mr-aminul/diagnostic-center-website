@@ -1,14 +1,18 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { Mail, MapPin, Phone } from "lucide-react";
-import { siteConfig, type Locale } from "@/config/site";
+import type { Locale } from "@/config/site";
+import { getResolvedSiteConfig } from "@/lib/data/site-settings";
+import { getDisplayBranches } from "@/lib/data/display-branches";
 import { Link } from "@/i18n/navigation";
 import { BrandMark } from "@/components/site/brand-mark";
 
 export async function Footer() {
   const t = await getTranslations();
   const locale = (await getLocale()) as Locale;
-  // Static config — avoid a Postgres round-trip on every public page.
-  const branches = siteConfig.branches;
+  const [site, branches] = await Promise.all([
+    getResolvedSiteConfig(),
+    getDisplayBranches(),
+  ]);
   const mainBranch = branches.find((b) => b.isMain) ?? branches[0];
 
   return (
@@ -18,14 +22,14 @@ export async function Footer() {
           <div>
             <div className="flex items-center gap-2 font-semibold">
               <BrandMark />
-              <span>{siteConfig.shortName}</span>
+              <span>{site.shortName}</span>
             </div>
             <p className="mt-3 text-sm text-white/70">
-              {siteConfig.tagline[locale]}
+              {site.tagline[locale]}
             </p>
-            {siteConfig.social.facebook && (
+            {site.social.facebook && (
               <a
-                href={siteConfig.social.facebook}
+                href={site.social.facebook}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-4 inline-flex items-center gap-2 text-sm text-white/70 hover:text-white"
@@ -41,27 +45,27 @@ export async function Footer() {
           <div>
             <h3 className="text-sm font-semibold">{t("footer.quickLinks")}</h3>
             <ul className="mt-3 space-y-2 text-sm text-white/70">
-              <li><Link href="/about" className="hover:text-white">{t("nav.about")}</Link></li>
-              {siteConfig.features.doctorsPage && (
-                <li><Link href="/doctors" className="hover:text-white">{t("nav.doctors")}</Link></li>
+              <li><Link href="/about" prefetch className="hover:text-white">{t("nav.about")}</Link></li>
+              {site.features.doctorsPage && (
+                <li><Link href="/doctors" prefetch className="hover:text-white">{t("nav.doctors")}</Link></li>
               )}
               {branches.length > 0 && (
-                <li><Link href="/branches" className="hover:text-white">{t("nav.branches")}</Link></li>
+                <li><Link href="/branches" prefetch className="hover:text-white">{t("nav.branches")}</Link></li>
               )}
-              <li><Link href="/faq" className="hover:text-white">{t("nav.faq")}</Link></li>
-              <li><Link href="/patient-portal" className="hover:text-white">{t("nav.patientPortal")}</Link></li>
-              <li><Link href="/contact" className="hover:text-white">{t("nav.contact")}</Link></li>
+              <li><Link href="/faq" prefetch className="hover:text-white">{t("nav.faq")}</Link></li>
+              <li><Link href="/patient-portal" prefetch className="hover:text-white">{t("nav.patientPortal")}</Link></li>
+              <li><Link href="/contact" prefetch className="hover:text-white">{t("nav.contact")}</Link></li>
             </ul>
           </div>
 
           <div>
             <h3 className="text-sm font-semibold">{t("footer.ourServices")}</h3>
             <ul className="mt-3 space-y-2 text-sm text-white/70">
-              <li><Link href="/services" className="hover:text-white">{t("nav.services")}</Link></li>
-              <li><Link href="/packages" className="hover:text-white">{t("nav.packages")}</Link></li>
-              <li><Link href="/price-list" className="hover:text-white">{t("nav.priceList")}</Link></li>
-              {siteConfig.features.homeCollection && (
-                <li><Link href="/home-collection" className="hover:text-white">{t("nav.homeCollection")}</Link></li>
+              <li><Link href="/services" prefetch className="hover:text-white">{t("nav.services")}</Link></li>
+              <li><Link href="/packages" prefetch className="hover:text-white">{t("nav.packages")}</Link></li>
+              <li><Link href="/price-list" prefetch className="hover:text-white">{t("nav.priceList")}</Link></li>
+              {site.features.homeCollection && (
+                <li><Link href="/home-collection" prefetch className="hover:text-white">{t("nav.homeCollection")}</Link></li>
               )}
             </ul>
           </div>
@@ -71,11 +75,11 @@ export async function Footer() {
             <ul className="mt-3 space-y-3 text-sm text-white/70">
               <li className="flex items-start gap-2">
                 <Phone className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>{siteConfig.contact.phones.join(", ")}</span>
+                <span>{site.contact.phones.join(", ")}</span>
               </li>
               <li className="flex items-start gap-2">
                 <Mail className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>{siteConfig.contact.email}</span>
+                <span>{site.contact.email}</span>
               </li>
               {mainBranch && (
                 <li className="flex items-start gap-2">
@@ -88,7 +92,7 @@ export async function Footer() {
         </div>
 
         <div className="mt-10 border-t border-white/10 pt-6 text-center text-xs text-white/70">
-          &copy; {new Date().getFullYear()} {siteConfig.name}. {t("footer.rightsReserved")}
+          &copy; {new Date().getFullYear()} {site.name}. {t("footer.rightsReserved")}
         </div>
       </div>
     </footer>

@@ -5,6 +5,7 @@ import { TrackForm } from "@/components/site/track-form";
 import { buttonVariants } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/config/site";
+import { getResolvedSiteConfig } from "@/lib/data/site-settings";
 import { buildPageMetadata } from "@/lib/seo";
 import { getInitialTrackPortalState } from "@/app/[locale]/patient-portal/actions";
 import { cn } from "@/lib/utils";
@@ -17,10 +18,14 @@ export default async function PatientPortalPage() {
   const t = await getTranslations("track");
   const tCommon = await getTranslations("common");
   const locale = (await getLocale()) as Locale;
-  const initialPortal = await getInitialTrackPortalState(locale);
+  const [initialPortal, site] = await Promise.all([
+    getInitialTrackPortalState(locale),
+    getResolvedSiteConfig(),
+  ]);
+  const demoPayment = site.features.onlinePayment && site.payment.provider === "demo";
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pb-12 pt-6 sm:px-6 lg:px-8 lg:pb-16 lg:pt-8">
+    <div className="mx-auto max-w-4xl px-4 pb-12 pt-6 sm:px-6 lg:px-8 lg:pb-16 lg:pt-8">
       <Link
         href="/"
         className={cn(
@@ -40,7 +45,7 @@ export default async function PatientPortalPage() {
       </header>
 
       <div className="mt-10">
-        <TrackForm locale={locale} initialPortal={initialPortal} />
+        <TrackForm locale={locale} initialPortal={initialPortal} demoPayment={demoPayment} />
       </div>
     </div>
   );

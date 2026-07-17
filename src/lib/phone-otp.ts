@@ -1,6 +1,6 @@
 import { createHash, randomInt, timingSafeEqual } from "crypto";
 import { db } from "@/lib/db";
-import { lastDigits } from "@/lib/phone";
+import { formatBdPhoneForStorage, lastDigits } from "@/lib/phone";
 import { sendSms } from "@/lib/sms";
 import { siteConfig } from "@/config/site";
 import { isDevOtpBypassEnabled } from "@/lib/dev-tools";
@@ -10,6 +10,9 @@ const OTP_RESEND_COOLDOWN_MS = 30 * 1000;
 const OTP_MAX_ATTEMPTS = 5;
 
 export function phoneKeyFromInput(phone: string): string | null {
+  const normalized = formatBdPhoneForStorage(phone);
+  if (normalized) return normalized;
+  // Fallback for legacy stored numbers that still match by last digits.
   const key = lastDigits(phone, 11);
   if (key.length < 10) return null;
   return key;

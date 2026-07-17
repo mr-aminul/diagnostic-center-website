@@ -1,16 +1,25 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useState, useTransition } from "react";
+import { ChevronDown } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { updateBookingStatus, type BookingActionState } from "@/app/admin/(protected)/bookings/[id]/actions";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { updateBookingStatus } from "@/app/admin/(protected)/bookings/[id]/actions";
+import { cn } from "@/lib/utils";
 
 const STATUSES = [
   "PENDING",
@@ -21,11 +30,29 @@ const STATUSES = [
   "CANCELLED",
 ] as const;
 
-const STATUS_LABELS = Object.fromEntries(
-  STATUSES.map((status) => [status, status.replaceAll("_", " ")]),
-) as Record<(typeof STATUSES)[number], string>;
+const STATUS_LABELS: Record<(typeof STATUSES)[number], string> = {
+  PENDING: "Pending",
+  CONFIRMED: "Confirmed",
+  SAMPLE_COLLECTED: "Sample collected",
+  PROCESSING: "Processing",
+  REPORT_READY: "Report ready",
+  CANCELLED: "Cancelled",
+};
 
-const initialState: BookingActionState = { status: "idle" };
+const STATUS_COLORS: Record<(typeof STATUSES)[number], string> = {
+  PENDING:
+    "border-amber-500/35 bg-amber-500/15 text-amber-950 hover:bg-amber-500/25 dark:text-amber-100",
+  CONFIRMED:
+    "border-sky-500/35 bg-sky-500/15 text-sky-950 hover:bg-sky-500/25 dark:text-sky-100",
+  SAMPLE_COLLECTED:
+    "border-violet-500/35 bg-violet-500/15 text-violet-950 hover:bg-violet-500/25 dark:text-violet-100",
+  PROCESSING:
+    "border-orange-500/35 bg-orange-500/15 text-orange-950 hover:bg-orange-500/25 dark:text-orange-100",
+  REPORT_READY:
+    "border-emerald-500/35 bg-emerald-500/15 text-emerald-950 hover:bg-emerald-500/25 dark:text-emerald-100",
+  CANCELLED:
+    "border-red-500/35 bg-red-500/15 text-red-950 hover:bg-red-500/25 dark:text-red-100",
+};
 
 export function BookingStatusForm({
   bookingId,
@@ -34,37 +61,100 @@ export function BookingStatusForm({
   bookingId: string;
   currentStatus: string;
 }) {
-  const action = updateBookingStatus.bind(null, bookingId);
-  const [state, formAction, isPending] = useActionState(action, initialState);
-  const [status, setStatus] = useState(currentStatus);
+  const [pending, startTransition] = useTransition();
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const status = (
+    STATUSES.includes(currentStatus as (typeof STATUSES)[number])
+      ? currentStatus
+      : "PENDING"
+  ) as (typeof STATUSES)[number];
 
-  useEffect(() => {
-    if (state.status === "success") toast.success("Booking status updated.");
-    if (state.status === "error" && state.error) toast.error(state.error);
-  }, [state]);
+  function applyStatus(next: (typeof STATUSES)[number]) {
+    if (next === status) return;
+    const formData = new FormData();
+    formData.set("status", next);
+    startTransition(async () => {
+      const result = await updateBookingStatus(
+        bookingId,
+        { status: "idle" },
+        formData,
+      );
+      if (result.status === "success") {
+        toast.success(
+          next === "CANCELLED" ? "Booking cancelled." : "Booking status updated.",
+        );
+        setCancelOpen(false);
+      }
+      if (result.status === "error" && result.error) toast.error(result.error);
+    });
+  }
+
+  function changeStatus(next: (typeof STATUSES)[number]) {
+    if (next === "CANCELLED") {
+      setCancelOpen(true);
+      return;
+    }
+    applyStatus(next);
+  }
 
   return (
-    <form action={formAction} className="flex flex-wrap items-center gap-3">
-      <Select
-        name="status"
-        value={status}
-        onValueChange={(value) => value && setStatus(value)}
-        items={STATUS_LABELS}
-      >
-        <SelectTrigger className="w-56">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {STATUSES.map((s) => (
-            <SelectItem key={s} value={s}>
-              {STATUS_LABELS[s]}
-            </SelectItem>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          disabled={pending}
+          className={cn(
+            buttonVariants({ variant: "outline", size: "sm" }),
+            "rounded-full px-3",
+            STATUS_COLORS[status],
+            pending && "opacity-60",
+          )}
+          aria-label={`Status: ${STATUS_LABELS[status]}. Click to change.`}
+        >
+          {STATUS_LABELS[status]}
+          <ChevronDown data-icon="inline-end" className="opacity-70" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="min-w-44 p-1">
+          {STATUSES.map((option) => (
+            <DropdownMenuItem
+              key={option}
+              disabled={pending || option === status}
+              onClick={() => changeStatus(option)}
+            >
+              {STATUS_LABELS[option]}
+            </DropdownMenuItem>
           ))}
-        </SelectContent>
-      </Select>
-      <Button type="submit" disabled={isPending || status === currentStatus}>
-        {isPending ? "Saving..." : "Update Status"}
-      </Button>
-    </form>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
+        <DialogContent showCloseButton={false} className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Cancel this booking?</DialogTitle>
+            <DialogDescription>
+              The patient will be notified by SMS. You can change the status again
+              later if needed.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={pending}
+              onClick={() => setCancelOpen(false)}
+            >
+              Keep booking
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={pending}
+              onClick={() => applyStatus("CANCELLED")}
+            >
+              {pending ? "Cancelling…" : "Cancel booking"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

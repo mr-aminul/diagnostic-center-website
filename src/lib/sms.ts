@@ -64,11 +64,17 @@ function getSmsProvider(): SmsProvider {
   }
 }
 
+/** Soft send used by booking/OTP flows — never throws. */
 export async function sendSms(to: string, message: string): Promise<void> {
   try {
-    await getSmsProvider().send(to, message);
+    await deliverSms(to, message);
   } catch (error) {
     // Never let a notification failure break a booking — log and move on.
     console.error("Failed to send SMS", { to, error });
   }
+}
+
+/** Strict send for admin actions — throws when the gateway fails. */
+export async function deliverSms(to: string, message: string): Promise<void> {
+  await getSmsProvider().send(to, message);
 }

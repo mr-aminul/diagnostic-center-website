@@ -32,13 +32,23 @@ const rescheduleSchema = bookingIdSchema.extend({
   preferredTime: z.string().optional(),
 });
 
+export interface TrackBookingItemView {
+  id: string;
+  name: string;
+  price: number;
+  hasReport: boolean;
+  reportFileName?: string;
+  reportUploadedAt?: string;
+  downloadToken?: string;
+}
+
 export interface TrackBookingView {
   id: string;
   referenceCode: string;
   status: string;
   createdAt: string;
+  /** True when at least one line-item report is ready. */
   hasReport: boolean;
-  downloadToken?: string;
   patientName: string;
   collectionType: string;
   preferredDate: string | null;
@@ -47,7 +57,7 @@ export interface TrackBookingView {
   paymentStatus: string;
   paymentMethod: string;
   estimatedReady: string;
-  items: { name: string; price: number }[];
+  items: TrackBookingItemView[];
   canCancel: boolean;
   canReschedule: boolean;
 }
@@ -67,9 +77,9 @@ export type TrackPortalState =
     };
 
 const bookingInclude = {
-  report: true,
   items: {
     include: {
+      report: true,
       test: true,
       package: { include: { tests: { include: { test: true } } } },
     },
@@ -96,21 +106,34 @@ async function toBookingView(
 
   const canManage = booking.status === "PENDING" || booking.status === "CONFIRMED";
 
-  let downloadToken: string | undefined;
-  if (booking.report) {
-    downloadToken = await createReportDownloadToken({
-      referenceCode: booking.referenceCode,
-      bookingId: booking.id,
-    });
-  }
+  const items: TrackBookingItemView[] = await Promise.all(
+    booking.items.map(async (item) => {
+      let downloadToken: string | undefined;
+      if (item.report) {
+        downloadToken = await createReportDownloadToken({
+          referenceCode: booking.referenceCode,
+          bookingId: booking.id,
+          bookingItemId: item.id,
+        });
+      }
+      return {
+        id: item.id,
+        name: item.nameSnapshot,
+        price: Number(item.priceSnapshot),
+        hasReport: Boolean(item.report),
+        reportFileName: item.report?.fileName,
+        reportUploadedAt: item.report?.uploadedAt.toISOString(),
+        downloadToken,
+      };
+    }),
+  );
 
   return {
     id: booking.id,
     referenceCode: booking.referenceCode,
     status: booking.status,
     createdAt: booking.createdAt.toISOString(),
-    hasReport: Boolean(booking.report),
-    downloadToken,
+    hasReport: items.some((item) => item.hasReport),
     patientName: booking.patientName,
     collectionType: booking.collectionType,
     preferredDate: booking.preferredDate
@@ -121,10 +144,7 @@ async function toBookingView(
     paymentStatus: booking.paymentStatus,
     paymentMethod: booking.paymentMethod,
     estimatedReady: estimateReadyLabel(turnarounds, locale),
-    items: booking.items.map((item) => ({
-      name: item.nameSnapshot,
-      price: Number(item.priceSnapshot),
-    })),
+    items,
     canCancel: canManage,
     canReschedule: canManage,
   };

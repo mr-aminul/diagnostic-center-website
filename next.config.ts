@@ -13,6 +13,14 @@ const nextConfig: NextConfig = {
     // Production still runs the optimizer.
     unoptimized: process.env.NODE_ENV === "development",
   },
+  // Next 15+ defaults dynamic staleTimes to 0 → every soft nav refetches RSC.
+  // Keep visited/prefetched pages warm so click-to-click feels instant.
+  experimental: {
+    staleTimes: {
+      dynamic: 60,
+      static: 300,
+    },
+  },
   async redirects() {
     return [
       {

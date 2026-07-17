@@ -1,17 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { db } from "@/lib/db";
-import { lastDigits } from "@/lib/phone";
-import { sendSms } from "@/lib/sms";
-import { siteConfig } from "@/config/site";
-import { estimateTimeForSerial } from "@/lib/doctor-serial";
-import {
-  appointmentDateFromInput,
-  isDoctorAvailableOnWeekday,
-  isPastDhakaDateString,
-  weekdayFromDateInput,
-} from "@/lib/doctor-availability";
+import { bookDoctorAppointment } from "@/lib/book-doctor-appointment";
 
 const appointmentSchema = z.object({
   doctorId: z.string().min(1),
@@ -60,136 +50,16 @@ export async function createDoctorAppointment(
     return { status: "error", errorMessage: "generic" };
   }
 
-  const data = parsed.data;
-
-  if (lastDigits(data.phone).length < 10) {
-    return { status: "error", errorMessage: "errorPhoneInvalid" };
+  const result = await bookDoctorAppointment(parsed.data);
+  if (!result.ok) {
+    return { status: "error", errorMessage: result.error };
   }
-
-  if (isPastDhakaDateString(data.appointmentDate)) {
-    return { status: "error", errorMessage: "errorPastDate" };
-  }
-
-  const doctor = await db.doctor.findFirst({
-    where: { id: data.doctorId, isActive: true },
-  });
-
-  if (!doctor) {
-    return { status: "error", errorMessage: "errorDoctorMissing" };
-  }
-
-  const availabilitySchedule = doctor.schedule ?? doctor.scheduleBn;
-  const weekday = weekdayFromDateInput(data.appointmentDate);
-  if (!isDoctorAvailableOnWeekday(availabilitySchedule, weekday)) {
-    return { status: "error", errorMessage: "errorDateUnavailable" };
-  }
-
-  const appointmentDate = appointmentDateFromInput(data.appointmentDate);
-
-  const existingCount = await db.doctorAppointment.count({
-    where: { doctorId: doctor.id, appointmentDate },
-  });
-  const serialNumber = existingCount + 1;
-  const estimatedTime = estimateTimeForSerial(serialNumber, doctor.schedule);
-
-  try {
-    await db.doctorAppointment.create({
-      data: {
-        doctorId: doctor.id,
-        patientName: data.patientName,
-        phone: data.phone,
-        age: data.age,
-        gender: data.gender,
-        serialNumber,
-        appointmentDate,
-        estimatedTime,
-        notes: data.notes,
-      },
-    });
-  } catch {
-    // Unique race — retry once with a fresh count
-    const retryCount = await db.doctorAppointment.count({
-      where: { doctorId: doctor.id, appointmentDate },
-    });
-    const retrySerial = retryCount + 1;
-    const retryEta = estimateTimeForSerial(retrySerial, doctor.schedule);
-
-    try {
-      await db.doctorAppointment.create({
-        data: {
-          doctorId: doctor.id,
-          patientName: data.patientName,
-          phone: data.phone,
-          age: data.age,
-          gender: data.gender,
-          serialNumber: retrySerial,
-          appointmentDate,
-          estimatedTime: retryEta,
-          notes: data.notes,
-        },
-      });
-
-      await notifyPatient({
-        phone: data.phone,
-        doctorName: doctor.name,
-        serialNumber: retrySerial,
-        estimatedTime: retryEta,
-        appointmentDateLabel: formatDateLabel(appointmentDate),
-      });
-
-      return {
-        status: "success",
-        serialNumber: retrySerial,
-        estimatedTime: retryEta,
-        doctorName: doctor.name,
-        appointmentDateLabel: formatDateLabel(appointmentDate),
-      };
-    } catch {
-      return { status: "error", errorMessage: "generic" };
-    }
-  }
-
-  await notifyPatient({
-    phone: data.phone,
-    doctorName: doctor.name,
-    serialNumber,
-    estimatedTime,
-    appointmentDateLabel: formatDateLabel(appointmentDate),
-  });
 
   return {
     status: "success",
-    serialNumber,
-    estimatedTime,
-    doctorName: doctor.name,
-    appointmentDateLabel: formatDateLabel(appointmentDate),
+    serialNumber: result.serialNumber,
+    estimatedTime: result.estimatedTime,
+    doctorName: result.doctorName,
+    appointmentDateLabel: result.appointmentDateLabel,
   };
-}
-
-async function notifyPatient({
-  phone,
-  doctorName,
-  serialNumber,
-  estimatedTime,
-  appointmentDateLabel,
-}: {
-  phone: string;
-  doctorName: string;
-  serialNumber: number;
-  estimatedTime: string;
-  appointmentDateLabel: string;
-}) {
-  await sendSms(
-    phone,
-    `${siteConfig.shortName}: appointment with ${doctorName} on ${appointmentDateLabel}. Serial #${serialNumber}, estimated ${estimatedTime}. Arrive a little early.`,
-  );
-}
-
-function formatDateLabel(date: Date): string {
-  return new Intl.DateTimeFormat("en-GB", {
-    timeZone: "UTC",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(date);
 }

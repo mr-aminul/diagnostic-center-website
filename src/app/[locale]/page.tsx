@@ -29,9 +29,12 @@ import {
   PromoBannerCarousel,
   type PromoBannerSlide,
 } from "@/components/site/promo-banner-carousel";
-import { siteConfig, type Locale } from "@/config/site";
+import type { Locale } from "@/config/site";
+import { pickLocalized } from "@/lib/cms/types";
 import { getPackages, getTestCategories } from "@/lib/data/catalog";
 import { getDoctors } from "@/lib/data/doctors";
+import { getResolvedSiteConfig } from "@/lib/data/site-settings";
+import { getLocalizedTestimonials } from "@/lib/data/testimonials";
 import { cn } from "@/lib/utils";
 
 const HERO_IMAGES = [
@@ -56,11 +59,13 @@ const CATEGORY_ICONS = [
 export default async function HomePage() {
   const t = await getTranslations();
   const locale = (await getLocale()) as Locale;
+  const site = await getResolvedSiteConfig();
 
-  const [packages, doctors, categories] = await Promise.all([
+  const [packages, doctors, categories, testimonials] = await Promise.all([
     getPackages(),
-    siteConfig.features.doctorsPage ? getDoctors() : Promise.resolve([]),
+    site.features.doctorsPage ? getDoctors() : Promise.resolve([]),
     getTestCategories(),
+    site.features.testimonials ? getLocalizedTestimonials(locale) : Promise.resolve([]),
   ]);
 
   const servicePillars = [
@@ -74,7 +79,7 @@ export default async function HomePage() {
       href: "/services" as const,
       Icon: Scan,
     },
-    ...(siteConfig.features.homeCollection
+    ...(site.features.homeCollection
       ? [
         {
           key: "homeCollection" as const,
@@ -96,7 +101,7 @@ export default async function HomePage() {
       key: "findDoctor" as const,
       href: "/doctors" as const,
       Icon: UserRoundSearch,
-      show: siteConfig.features.doctorsPage,
+      show: site.features.doctorsPage,
     },
     {
       key: "reports" as const,
@@ -131,7 +136,7 @@ export default async function HomePage() {
         },
       ]
       : []),
-    ...(siteConfig.features.homeCollection
+    ...(site.features.homeCollection
       ? [
         {
           id: "homeCollection",
@@ -148,12 +153,6 @@ export default async function HomePage() {
       href: "/patient-portal" as const,
     },
   ];
-
-  const testimonials = t.raw("home.testimonials") as {
-    name: string;
-    role: string;
-    quote: string;
-  }[];
 
   return (
     <div>
@@ -174,13 +173,13 @@ export default async function HomePage() {
               {t("home.heroEyebrow")}
             </Badge>
             <h1 className="whitespace-nowrap text-[clamp(1.2rem,3.6vw,3rem)] font-bold tracking-tight text-white">
-              {siteConfig.name}
+              {site.name}
             </h1>
             <p className="mt-8 text-lg text-white/90 sm:mt-10">
-              {siteConfig.tagline[locale]}
+              {site.tagline[locale]}
             </p>
             <p className="mt-3 max-w-xl text-white/75">
-              {siteConfig.description[locale]}
+              {site.description[locale]}
             </p>
             <GlobalSearchLazy locale={locale} className="mt-8" />
           </div>
@@ -214,7 +213,7 @@ export default async function HomePage() {
 
       <PromoBannerCarousel slides={promoSlides} />
 
-      {siteConfig.features.doctorsPage && doctors.length > 0 && (
+      {site.features.doctorsPage && doctors.length > 0 && (
         <section className="border-b bg-background">
           <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -329,13 +328,15 @@ export default async function HomePage() {
         <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
           <div>
             <SectionHeading
-              title={t("home.aboutTitle", { name: siteConfig.shortName })}
+              title={t("home.aboutTitle", { name: site.shortName })}
               align="left"
             />
             <p className="mt-6 text-muted-foreground">
-              {siteConfig.description[locale]}
+              {site.description[locale]}
             </p>
-            <p className="mt-4 text-muted-foreground">{t("about.missionBody")}</p>
+            <p className="mt-4 text-muted-foreground">
+              {pickLocalized(site.about.missionBody, locale)}
+            </p>
             <Link
               href="/about"
               className={buttonVariants({ variant: "outline", className: "mt-6" })}
@@ -348,8 +349,8 @@ export default async function HomePage() {
               ["accurate", "fast", "homeCollection", "doctors"] as const
             )
               .filter((key) => {
-                if (key === "homeCollection") return siteConfig.features.homeCollection;
-                if (key === "doctors") return siteConfig.features.doctorsPage;
+                if (key === "homeCollection") return site.features.homeCollection;
+                if (key === "doctors") return site.features.doctorsPage;
                 return true;
               })
               .map((key) => (
@@ -368,7 +369,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {siteConfig.features.testimonials && (
+      {site.features.testimonials && testimonials.length > 0 && (
         <section className="border-t bg-secondary/30">
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <SectionHeading title={t("home.testimonialsTitle")} />

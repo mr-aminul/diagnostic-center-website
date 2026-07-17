@@ -48,6 +48,7 @@ export function ContactForm() {
           id="name"
           name="name"
           required
+          autoComplete="name"
           maxLength={100}
           defaultValue={demoDefault(DEV_SAMPLE.contactName)}
         />
@@ -59,10 +60,26 @@ export function ContactForm() {
           name="phone"
           type="tel"
           required
+          autoComplete="tel"
           maxLength={20}
           placeholder={BD_PHONE_HINT}
           inputMode="tel"
           defaultValue={demoDefault(DEV_SAMPLE.phone)}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="email">
+          {t("formEmail")}{" "}
+          <span className="font-normal text-muted-foreground">({tCommon("optional")})</span>
+        </Label>
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          maxLength={254}
+          inputMode="email"
+          defaultValue={demoDefault(DEV_SAMPLE.contactEmail)}
         />
       </div>
       <div className="space-y-2">

@@ -8,13 +8,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { GenderRadioGroup, type GenderValue } from "@/components/gender-radio-group";
 import {
   Popover,
   PopoverContent,
@@ -67,6 +61,9 @@ export function DoctorAppointmentForm({
     nextAvailableDate(schedule),
   );
   const [dateOpen, setDateOpen] = useState(false);
+  const [gender, setGender] = useState<GenderValue | "">(
+    () => (demoDefault("OTHER") as GenderValue | "") || "",
+  );
 
   if (state.status === "success") {
     return (
@@ -130,6 +127,7 @@ export function DoctorAppointmentForm({
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="doctorId" value={doctorId} />
       <input type="hidden" name="appointmentDate" value={appointmentDateValue} />
+      <input type="hidden" name="gender" value={gender} />
 
       <div className="rounded-xl border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
         {t("systemAssignsNotice")}
@@ -225,26 +223,17 @@ export function DoctorAppointmentForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="gender">{t("gender")}</Label>
-          <Select
-            name="gender"
+          <Label>{t("gender")}</Label>
+          <GenderRadioGroup
+            value={gender}
+            onValueChange={setGender}
             required
-            defaultValue={demoDefault("OTHER")}
-            items={{
-              MALE: t("genderMale"),
-              FEMALE: t("genderFemale"),
-              OTHER: t("genderOther"),
+            labels={{
+              male: t("genderMale"),
+              female: t("genderFemale"),
+              other: t("genderOther"),
             }}
-          >
-            <SelectTrigger id="gender" className="w-full">
-              <SelectValue placeholder={t("genderPlaceholder")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="MALE">{t("genderMale")}</SelectItem>
-              <SelectItem value="FEMALE">{t("genderFemale")}</SelectItem>
-              <SelectItem value="OTHER">{t("genderOther")}</SelectItem>
-            </SelectContent>
-          </Select>
+          />
         </div>
       </div>
 
@@ -270,7 +259,7 @@ export function DoctorAppointmentForm({
 
       <Button
         type="submit"
-        disabled={isPending || !appointmentDateValue}
+        disabled={isPending || !appointmentDateValue || !gender}
         className="w-full sm:w-auto"
       >
         {isPending ? tCommon("submitting") : t("submit")}

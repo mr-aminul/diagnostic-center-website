@@ -1,7 +1,7 @@
-import { siteConfig } from "@/config/site";
+"use client";
 
-export function WhatsappButton() {
-  const digitsOnly = siteConfig.contact.whatsapp.replace(/[^\d]/g, "");
+export function WhatsappButton({ whatsapp }: { whatsapp: string }) {
+  const digitsOnly = whatsapp.replace(/[^\d]/g, "");
 
   return (
     <a

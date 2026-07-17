@@ -102,9 +102,9 @@ export function ServicesCatalog({
           {filtered.map((test) => (
             <Card
               key={test.id}
-              className="transition-shadow duration-300 hover:shadow-md"
+              className="h-full transition-shadow duration-300 hover:shadow-md"
             >
-              <CardContent className="flex h-full flex-col p-5">
+              <CardContent className="flex flex-1 flex-col p-5">
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="font-semibold">
                     {locale === "bn" && test.nameBn ? test.nameBn : test.name}
@@ -142,7 +142,7 @@ export function ServicesCatalog({
                 )}
                 <Link
                   href={{ pathname: "/book", query: { test: test.id } }}
-                  className={buttonVariants({ className: "mt-auto pt-4" })}
+                  className={buttonVariants({ className: "mt-auto w-full pt-4" })}
                 >
                   {t("addToBooking")}
                 </Link>

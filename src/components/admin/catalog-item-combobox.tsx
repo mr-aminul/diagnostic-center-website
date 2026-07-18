@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, TestTube, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -239,57 +239,57 @@ export function ItemNameField({
   const listbox =
     open && coords
       ? createPortal(
-          <div
-            ref={listRef}
-            id={listId}
-            role="listbox"
-            style={{
-              position: "fixed",
-              top: coords.top,
-              left: coords.left,
-              width: coords.width,
-              maxHeight: coords.maxHeight,
-            }}
-            className="z-[100] overflow-y-auto rounded-lg border bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10"
-          >
-            {suggestions.length === 0 ? (
-              <p className="px-2 py-4 text-center text-xs text-muted-foreground">
-                {value.trim()
-                  ? `No matches for “${value.trim()}”.`
-                  : "No more catalog items available."}
-              </p>
-            ) : (
-              suggestions.map((item, index) => (
-                <button
-                  key={itemKey(item)}
-                  id={`${listId}-${index}`}
-                  type="button"
-                  role="option"
-                  aria-selected={false}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs outline-none transition-colors hover:bg-muted focus-visible:bg-muted"
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => {
-                    onPick(item);
-                    setOpen(false);
-                  }}
-                >
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-1.5">
-                      <Badge variant="outline" className="shrink-0 text-[10px]">
-                        {item.type === "package" ? "Package" : "Test"}
-                      </Badge>
-                      <span className="truncate font-medium">{item.name}</span>
-                    </span>
+        <div
+          ref={listRef}
+          id={listId}
+          role="listbox"
+          style={{
+            position: "fixed",
+            top: coords.top,
+            left: coords.left,
+            width: coords.width,
+            maxHeight: coords.maxHeight,
+          }}
+          className="z-[100] overflow-y-auto rounded-lg border bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10"
+        >
+          {suggestions.length === 0 ? (
+            <p className="px-2 py-4 text-center text-xs text-muted-foreground">
+              {value.trim()
+                ? `No matches for “${value.trim()}”.`
+                : "No more catalog items available."}
+            </p>
+          ) : (
+            suggestions.map((item, index) => (
+              <button
+                key={itemKey(item)}
+                id={`${listId}-${index}`}
+                type="button"
+                role="option"
+                aria-selected={false}
+                className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs outline-none transition-colors hover:bg-muted focus-visible:bg-muted"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => {
+                  onPick(item);
+                  setOpen(false);
+                }}
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-1.5">
+                    <Badge variant="outline" className="shrink-0 text-[10px]">
+                      {item.type === "package" ? "Package" : "Test"}
+                    </Badge>
+                    <span className="truncate font-medium">{item.name}</span>
                   </span>
-                  <span className="shrink-0 text-muted-foreground tabular-nums">
-                    {formatAmount(item.price)}
-                  </span>
-                </button>
-              ))
-            )}
-          </div>,
-          document.body,
-        )
+                </span>
+                <span className="shrink-0 text-muted-foreground tabular-nums">
+                  {formatAmount(item.price)}
+                </span>
+              </button>
+            ))
+          )}
+        </div>,
+        document.body,
+      )
       : null;
 
   return (
@@ -439,11 +439,11 @@ export function CatalogItemCombobox({
       selected.map((row) =>
         row.id === previous.id && row.type === previous.type
           ? {
-              ...next,
-              discount: 0,
-              discountMode: "amount",
-              discountValue: 0,
-            }
+            ...next,
+            discount: 0,
+            discountMode: "amount",
+            discountValue: 0,
+          }
           : row,
       ),
     );
@@ -508,20 +508,8 @@ export function CatalogItemCombobox({
   return (
     <BookingSection
       title="Tests & packages"
+      icon={TestTube}
       className={sectionClassName}
-      titleAction={
-        <Button
-          id={id}
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={available.length === 0}
-          onClick={addDraftRow}
-        >
-          <Plus />
-          Add
-        </Button>
-      }
       headerRight={
         onPaymentDraftChange ? (
           <>
@@ -558,198 +546,212 @@ export function CatalogItemCombobox({
                 <TableHead className="w-8" />
               </TableRow>
             </TableHeader>
-          <TableBody>
-            {showEmpty ? (
-              <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={7} className="py-5 text-center text-muted-foreground">
-                  Click Add to insert a row, then type a test or package name.
-                </TableCell>
-              </TableRow>
-            ) : null}
+            <TableBody>
+              {showEmpty ? (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={7} className="py-5 text-center text-muted-foreground">
+                    No tests or packages yet. Add an item below to get started.
+                  </TableCell>
+                </TableRow>
+              ) : null}
 
-            {selected.map((item) => {
-              const key = itemKey(item);
-              const isEditing = editingKey === key;
-              const percent = percentForItem(item);
-              const lineTotal = Math.max(
-                0,
-                Math.round((item.price - item.discount) * 100) / 100,
-              );
-              return (
-                <TableRow key={key}>
-                  <TableCell className="whitespace-normal">
-                    {isEditing ? (
-                      <ItemNameField
-                        value={editingQuery}
-                        suggestions={suggestionsFor(editingQuery, key)}
-                        autoFocus
-                        onValueChange={setEditingQuery}
-                        onPick={(picked) => replaceSelected(item, picked)}
-                        onBlurEmpty={() => {
-                          setEditingKey(null);
-                          setEditingQuery("");
-                        }}
+              {selected.map((item) => {
+                const key = itemKey(item);
+                const isEditing = editingKey === key;
+                const percent = percentForItem(item);
+                const lineTotal = Math.max(
+                  0,
+                  Math.round((item.price - item.discount) * 100) / 100,
+                );
+                return (
+                  <TableRow key={key}>
+                    <TableCell className="whitespace-normal">
+                      {isEditing ? (
+                        <ItemNameField
+                          value={editingQuery}
+                          suggestions={suggestionsFor(editingQuery, key)}
+                          autoFocus
+                          onValueChange={setEditingQuery}
+                          onPick={(picked) => replaceSelected(item, picked)}
+                          onBlurEmpty={() => {
+                            setEditingKey(null);
+                            setEditingQuery("");
+                          }}
+                        />
+                      ) : (
+                        <button
+                          type="button"
+                          className="w-full border-0 border-b border-transparent bg-transparent p-0 text-left text-xs font-medium outline-none hover:border-muted-foreground/40"
+                          onClick={() => {
+                            setEditingKey(key);
+                            setEditingQuery(item.name);
+                            setFocusDraftKey(null);
+                          }}
+                        >
+                          {item.name}
+                        </button>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {item.type === "package" ? "Package" : "Test"}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {formatAmount(item.price)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <InlineEditableValue
+                        display={item.discount > 0 ? formatAmount(item.discount) : "0"}
+                        draftSeed={item.discount > 0 ? String(item.discount) : ""}
+                        label={`Discount amount for ${item.name}`}
+                        title="Edit discount amount"
+                        onCommit={(raw) => setItemDiscountAmount(item, raw)}
                       />
-                    ) : (
-                      <button
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <InlineEditableValue
+                        display={percent > 0 ? `${formatPercent(percent)}%` : "0%"}
+                        draftSeed={percent > 0 ? formatPercent(percent) : ""}
+                        label={`Discount percent for ${item.name}`}
+                        title="Edit discount percent"
+                        suffix="%"
+                        onCommit={(raw) => setItemDiscountPercent(item, raw)}
+                      />
+                    </TableCell>
+                    <TableCell className="text-right font-medium tabular-nums">
+                      {formatAmount(lineTotal)}
+                    </TableCell>
+                    <TableCell className="px-1 text-right">
+                      <Button
                         type="button"
-                        className="w-full border-0 border-b border-transparent bg-transparent p-0 text-left text-xs font-medium outline-none hover:border-muted-foreground/40"
-                        onClick={() => {
-                          setEditingKey(key);
-                          setEditingQuery(item.name);
-                          setFocusDraftKey(null);
-                        }}
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={`Remove ${item.name}`}
+                        onClick={() => removeItem(item)}
                       >
-                        {item.name}
-                      </button>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {item.type === "package" ? "Package" : "Test"}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {formatAmount(item.price)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <InlineEditableValue
-                      display={item.discount > 0 ? formatAmount(item.discount) : "0"}
-                      draftSeed={item.discount > 0 ? String(item.discount) : ""}
-                      label={`Discount amount for ${item.name}`}
-                      title="Edit discount amount"
-                      onCommit={(raw) => setItemDiscountAmount(item, raw)}
+                        <Trash2 />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+
+              {drafts.map((draft) => (
+                <TableRow key={draft.key} className="bg-muted/20">
+                  <TableCell className="whitespace-normal">
+                    <ItemNameField
+                      value={draft.query}
+                      suggestions={suggestionsFor(draft.query)}
+                      autoFocus={focusDraftKey === draft.key}
+                      placeholder="Type test or package name…"
+                      onValueChange={(query) => updateDraftQuery(draft.key, query)}
+                      onPick={(item) => commitDraft(draft.key, item)}
+                      onBlurEmpty={() => removeDraft(draft.key)}
                     />
                   </TableCell>
-                  <TableCell className="text-right">
-                    <InlineEditableValue
-                      display={percent > 0 ? `${formatPercent(percent)}%` : "0%"}
-                      draftSeed={percent > 0 ? formatPercent(percent) : ""}
-                      label={`Discount percent for ${item.name}`}
-                      title="Edit discount percent"
-                      suffix="%"
-                      onCommit={(raw) => setItemDiscountPercent(item, raw)}
-                    />
-                  </TableCell>
-                  <TableCell className="text-right font-medium tabular-nums">
-                    {formatAmount(lineTotal)}
-                  </TableCell>
+                  <TableCell className="text-muted-foreground">—</TableCell>
+                  <TableCell className="text-right text-muted-foreground">—</TableCell>
+                  <TableCell className="text-right text-muted-foreground">—</TableCell>
+                  <TableCell className="text-right text-muted-foreground">—</TableCell>
+                  <TableCell className="text-right text-muted-foreground">—</TableCell>
                   <TableCell className="px-1 text-right">
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon-sm"
-                      aria-label={`Remove ${item.name}`}
-                      onClick={() => removeItem(item)}
+                      aria-label="Remove row"
+                      onClick={() => removeDraft(draft.key)}
                     >
                       <Trash2 />
                     </Button>
                   </TableCell>
                 </TableRow>
-              );
-            })}
+              ))}
+            </TableBody>
+          </Table>
+          <div className="border-t px-2 py-1.5">
+            <Button
+              id={id}
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={available.length === 0}
+              onClick={addDraftRow}
+              className="h-8 w-full justify-start text-muted-foreground hover:text-foreground"
+            >
+              <Plus />
+              Add item
+            </Button>
+          </div>
+        </div>
 
-            {drafts.map((draft) => (
-              <TableRow key={draft.key} className="bg-muted/20">
-                <TableCell className="whitespace-normal">
-                  <ItemNameField
-                    value={draft.query}
-                    suggestions={suggestionsFor(draft.query)}
-                    autoFocus={focusDraftKey === draft.key}
-                    placeholder="Type test or package name…"
-                    onValueChange={(query) => updateDraftQuery(draft.key, query)}
-                    onPick={(item) => commitDraft(draft.key, item)}
-                    onBlurEmpty={() => removeDraft(draft.key)}
-                  />
-                </TableCell>
-                <TableCell className="text-muted-foreground">—</TableCell>
-                <TableCell className="text-right text-muted-foreground">—</TableCell>
-                <TableCell className="text-right text-muted-foreground">—</TableCell>
-                <TableCell className="text-right text-muted-foreground">—</TableCell>
-                <TableCell className="text-right text-muted-foreground">—</TableCell>
-                <TableCell className="px-1 text-right">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label="Remove row"
-                    onClick={() => removeDraft(draft.key)}
-                  >
-                    <Trash2 />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      {selected.length > 0 || paymentDraft ? (
-        <InvoiceTotals
-          itemCount={selected.length}
-          subtotal={subtotal}
-          discount={discountTotal}
-          payable={netTotal}
-          due={displayDue}
-          dueEmphasis
-          paymentRows={
-            paymentDraft && onPaymentDraftChange ? (
-              <InvoiceTotalsRow
-                label={
-                  <Select
-                    value={paymentDraft.method}
-                    onValueChange={(value) =>
-                      value &&
-                      onPaymentDraftChange({
-                        ...paymentDraft,
-                        method: value,
-                      })
-                    }
-                    items={COLLECT_METHOD_TITLES}
-                  >
-                    <SelectTrigger
-                      className={cn(
-                        inlineUnderlineSelectTriggerClass,
-                        "w-auto max-w-[7rem] text-muted-foreground",
-                      )}
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {COLLECT_METHODS.map((method) => (
-                        <SelectItem key={method} value={method}>
-                          {paymentMethodTitle(method)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                }
-                valueNode={
-                  <InlineUnderlineInput
-                    type="text"
-                    inputMode="decimal"
-                    value={paymentDraft.amount}
-                    onChange={(event) =>
-                      onPaymentDraftChange({
-                        ...paymentDraft,
-                        amount: event.target.value.replace(/[^\d.]/g, ""),
-                      })
-                    }
-                    onKeyDown={(event) => {
-                      if (event.key === "Escape") {
-                        event.preventDefault();
-                        onPaymentDraftChange(null);
+        {selected.length > 0 || paymentDraft ? (
+          <InvoiceTotals
+            itemCount={selected.length}
+            subtotal={subtotal}
+            discount={discountTotal}
+            payable={netTotal}
+            due={displayDue}
+            dueEmphasis
+            paymentRows={
+              paymentDraft && onPaymentDraftChange ? (
+                <InvoiceTotalsRow
+                  label={
+                    <Select
+                      value={paymentDraft.method}
+                      onValueChange={(value) =>
+                        value &&
+                        onPaymentDraftChange({
+                          ...paymentDraft,
+                          method: value,
+                        })
                       }
-                    }}
-                    className="w-14 text-right font-medium tabular-nums"
-                    aria-label="Amount received"
-                  />
-                }
-              />
-            ) : (
-              <InvoiceTotalsRow label="Received" value={0} />
-            )
-          }
-        />
-      ) : null}
+                      items={COLLECT_METHOD_TITLES}
+                    >
+                      <SelectTrigger
+                        className={cn(
+                          inlineUnderlineSelectTriggerClass,
+                          "w-auto max-w-[7rem] text-muted-foreground",
+                        )}
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COLLECT_METHODS.map((method) => (
+                          <SelectItem key={method} value={method}>
+                            {paymentMethodTitle(method)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  }
+                  valueNode={
+                    <InlineUnderlineInput
+                      type="text"
+                      inputMode="decimal"
+                      value={paymentDraft.amount}
+                      onChange={(event) =>
+                        onPaymentDraftChange({
+                          ...paymentDraft,
+                          amount: event.target.value.replace(/[^\d.]/g, ""),
+                        })
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key === "Escape") {
+                          event.preventDefault();
+                          onPaymentDraftChange(null);
+                        }
+                      }}
+                      className="w-14 text-right font-medium tabular-nums"
+                      aria-label="Amount received"
+                    />
+                  }
+                />
+              ) : (
+                <InvoiceTotalsRow label="Received" value={0} />
+              )
+            }
+          />
+        ) : null}
       </div>
     </BookingSection>
   );

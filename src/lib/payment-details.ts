@@ -20,12 +20,13 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethodId, string> = {
   OTHER: "Other",
 };
 
-export const LEDGER_KINDS = ["PAYMENT", "DISCOUNT"] as const;
+export const LEDGER_KINDS = ["PAYMENT", "DISCOUNT", "REFUND"] as const;
 export type LedgerKindId = (typeof LEDGER_KINDS)[number];
 
 export const LEDGER_KIND_LABELS: Record<LedgerKindId, string> = {
   PAYMENT: "Payment",
   DISCOUNT: "Discount",
+  REFUND: "Refund",
 };
 
 export const PAYMENT_STATUSES = [

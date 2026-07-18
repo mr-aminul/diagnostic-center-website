@@ -22,6 +22,7 @@ export type BookingReportItem = {
   name: string;
   type: "test" | "package";
   report: { fileName: string } | null;
+  isCancelled?: boolean;
 };
 
 export function BookingReportsPanel({
@@ -36,6 +37,7 @@ export function BookingReportsPanel({
   const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
   const [deletePending, setDeletePending] = useState(false);
 
+  const activeItems = items.filter((item) => !item.isCancelled);
   const viewingItem =
     items.find((item) => item.id === viewingItemId && item.report) ?? null;
   const viewingUrl = viewingItem
@@ -43,13 +45,16 @@ export function BookingReportsPanel({
     : null;
   const deleteItem = items.find((item) => item.id === deleteItemId) ?? null;
 
-  const readyCount = items.filter((item) => item.report).length;
+  const readyCount = activeItems.filter((item) => item.report).length;
   const modalOpen = Boolean(viewingItem && viewingUrl);
 
   if (items.length === 0) {
     return (
       <section className="rounded-xl border bg-card p-4">
-        <p className="text-sm font-semibold">Reports</p>
+        <div className="flex items-center gap-1.5">
+          <FileText className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
+          <p className="text-sm font-semibold">Reports</p>
+        </div>
         <p className="mt-1 text-sm text-muted-foreground">
           Add tests or packages to this booking before uploading reports.
         </p>
@@ -65,25 +70,38 @@ export function BookingReportsPanel({
           <p className="text-sm font-semibold">Reports</p>
         </div>
         <p className="text-xs text-muted-foreground tabular-nums">
-          {readyCount}/{items.length}
+          {readyCount}/{activeItems.length}
         </p>
       </div>
 
       <ul className="divide-y">
         {items.map((item) => {
           const isReady = Boolean(item.report);
+          const isCancelled = Boolean(item.isCancelled);
 
           return (
-            <li key={item.id} className="px-3 py-2.5">
+            <li
+              key={item.id}
+              className={cn("px-3 py-2.5", isCancelled && "opacity-60")}
+            >
               <div className="flex items-center gap-2">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{item.name}</p>
+                  <p
+                    className={cn(
+                      "truncate text-sm font-medium",
+                      isCancelled && "line-through text-muted-foreground",
+                    )}
+                  >
+                    {item.name}
+                  </p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {item.report?.fileName ?? "No report yet"}
+                    {isCancelled
+                      ? "Cancelled"
+                      : (item.report?.fileName ?? "No report yet")}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
-                  {isReady ? (
+                  {isCancelled ? null : isReady ? (
                     <>
                       <Button
                         type="button"
@@ -93,7 +111,7 @@ export function BookingReportsPanel({
                         title="View"
                         onClick={() => setViewingItemId(item.id)}
                       >
-                        <Eye />
+                        <Eye strokeWidth={2.5} />
                       </Button>
                       <Button
                         type="button"
@@ -103,14 +121,14 @@ export function BookingReportsPanel({
                         title="Delete"
                         onClick={() => setDeleteItemId(item.id)}
                       >
-                        <Trash2 className="text-destructive" />
+                        <Trash2 className="text-destructive" strokeWidth={2.5} />
                       </Button>
                     </>
                   ) : (
                     <ReportUploadForm
                       bookingId={bookingId}
                       bookingItemId={item.id}
-                      variant="outline"
+                      variant="default"
                       iconOnly
                     />
                   )}

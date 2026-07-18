@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
+import { formatBdPhoneForStorage, lastDigits } from "@/lib/phone";
 import {
   createSessionToken,
   verifySessionToken,
@@ -9,6 +10,27 @@ import {
   SESSION_MAX_AGE_SECONDS,
   type SessionPayload,
 } from "@/lib/session-token";
+
+/** Resolve a staff row by local 01… number or legacy +880… storage. */
+async function findStaffUserByPhone(phone: string) {
+  const normalized = formatBdPhoneForStorage(phone);
+  if (normalized) {
+    const byCanonical = await db.staffUser.findUnique({ where: { phone: normalized } });
+    if (byCanonical) return byCanonical;
+  }
+
+  const byExact = await db.staffUser.findUnique({ where: { phone } });
+  if (byExact) return byExact;
+
+  const suffix = lastDigits(phone, 10);
+  if (suffix.length < 10) return null;
+
+  const candidates = await db.staffUser.findMany({
+    where: { phone: { contains: suffix } },
+    take: 10,
+  });
+  return candidates.find((user) => lastDigits(user.phone, 10) === suffix) ?? null;
+}
 
 export async function getSession(): Promise<SessionPayload | null> {
   const cookieStore = await cookies();
@@ -32,10 +54,21 @@ export async function requireAdmin(): Promise<SessionPayload> {
 }
 
 export async function verifyCredentials(phone: string, password: string) {
-  const user = await db.staffUser.findUnique({ where: { phone } });
+  const user = await findStaffUserByPhone(phone);
   if (!user || !user.isActive) return null;
   const isValid = await bcrypt.compare(password, user.passwordHash);
   return isValid ? user : null;
+}
+
+/** Re-verify the currently logged-in staff user's password (e.g. before cancel). */
+export async function verifySessionPassword(password: string): Promise<boolean> {
+  const session = await getSession();
+  if (!session || !password) return false;
+
+  const user = await db.staffUser.findUnique({ where: { id: session.userId } });
+  if (!user || !user.isActive) return false;
+
+  return bcrypt.compare(password, user.passwordHash);
 }
 
 export async function createSessionCookie(user: {

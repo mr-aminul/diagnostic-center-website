@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoginForm } from "@/components/admin/login-form";
 import { siteConfig } from "@/config/site";
 import { isDevToolsEnabled } from "@/lib/dev-tools";
+import { formatBdPhoneForStorage } from "@/lib/phone";
 
 export default async function AdminLoginPage({
   searchParams,
@@ -9,9 +10,10 @@ export default async function AdminLoginPage({
   searchParams: Promise<{ next?: string }>;
 }) {
   const params = await searchParams;
+  const seedPhone = process.env.SEED_ADMIN_PHONE;
   const demoCredentials = isDevToolsEnabled()
     ? {
-        phone: process.env.SEED_ADMIN_PHONE,
+        phone: (seedPhone && formatBdPhoneForStorage(seedPhone)) || seedPhone,
         password: process.env.SEED_ADMIN_PASSWORD,
       }
     : undefined;

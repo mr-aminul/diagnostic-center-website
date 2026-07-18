@@ -3,8 +3,10 @@
 import { useActionState, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Trash2 } from "lucide-react";
+import { Ban, Plus, TestTube, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -44,6 +46,7 @@ import {
 } from "@/components/admin/catalog-item-combobox";
 import {
   addBookingItem,
+  cancelBookingItem,
   deleteBookingPayment,
   removeBookingItem,
   replaceBookingItem,
@@ -53,9 +56,11 @@ import {
 } from "@/app/admin/(protected)/bookings/[id]/actions";
 import { toNumber, type Numeric } from "@/lib/format";
 import {
+  LEDGER_KIND_LABELS,
   PAYMENT_METHOD_LABELS,
   PAYMENT_METHODS,
   paymentBalance,
+  type LedgerKindId,
 } from "@/lib/payment-details";
 import { parseLineDiscountItemId } from "@/lib/booking-line-discount-notes";
 import { cn } from "@/lib/utils";
@@ -101,6 +106,7 @@ export type BookingItemRow = {
   catalogId: string;
   price: number;
   hasReport: boolean;
+  isCancelled?: boolean;
 };
 
 type DraftRow = { key: string; query: string };
@@ -156,17 +162,28 @@ function buildLineState(
     else untagged += txn.amount;
   }
 
+  const activeItems = items.filter((item) => !item.isCancelled);
   const hasTagged = tagged.size > 0;
   const pool = hasTagged ? 0 : untagged > 0 ? untagged : discountTotal;
-  const subtotal = items.reduce((sum, item) => sum + item.price, 0);
+  const subtotal = activeItems.reduce((sum, item) => sum + item.price, 0);
 
   let allocated = 0;
-  return items.map((item, index) => {
+  return items.map((item) => {
+    if (item.isCancelled) {
+      return {
+        ...item,
+        isCancelled: true,
+        discount: 0,
+        discountMode: "amount" as const,
+        discountValue: 0,
+      };
+    }
+    const activeIndex = activeItems.findIndex((row) => row.id === item.id);
     let discount = 0;
     if (hasTagged) {
       discount = clampDiscount(tagged.get(item.id) ?? 0, item.price);
     } else if (pool > 0 && subtotal > 0) {
-      if (index === items.length - 1) {
+      if (activeIndex === activeItems.length - 1) {
         discount = clampDiscount(pool - allocated, item.price);
       } else {
         discount = clampDiscount((pool * item.price) / subtotal, item.price);
@@ -175,6 +192,7 @@ function buildLineState(
     }
     return {
       ...item,
+      isCancelled: false,
       discount,
       discountMode: "amount" as const,
       discountValue: discount,
@@ -182,9 +200,10 @@ function buildLineState(
   });
 }
 
-/** Always-editable items table with discounts, payments, and catalog add/replace. */
+/** Items table with discounts, payments, and catalog add/replace (edit mode). */
 export function PaymentPanel({
   bookingId,
+  isEditing = true,
   estimatedTotal,
   amountPaid,
   discountTotal,
@@ -193,6 +212,7 @@ export function PaymentPanel({
   catalog,
 }: {
   bookingId: string;
+  isEditing?: boolean;
   estimatedTotal: number;
   amountPaid: number;
   discountTotal: number;
@@ -218,10 +238,24 @@ export function PaymentPanel({
   const [editingQuery, setEditingQuery] = useState("");
   const [paymentDraft, setPaymentDraft] = useState<PaymentDraft | null>(null);
   const [removeTarget, setRemoveTarget] = useState<LineState | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<LineState | null>(null);
+  const [cancelPassword, setCancelPassword] = useState("");
+  const [cancelReason, setCancelReason] = useState("");
   paymentDraftRef.current = paymentDraft;
 
+  const isPaid = amountPaid > 0;
+  const activeLines = useMemo(
+    () => lines.filter((line) => !line.isCancelled),
+    [lines],
+  );
+
   const selectedKeys = useMemo(
-    () => new Set(items.map((item) => catalogKey({ type: item.type, id: item.catalogId }))),
+    () =>
+      new Set(
+        items
+          .filter((item) => !item.isCancelled)
+          .map((item) => catalogKey({ type: item.type, id: item.catalogId })),
+      ),
     [items],
   );
 
@@ -245,8 +279,8 @@ export function PaymentPanel({
     setLines(buildLineState(items, transactions, discountTotal));
   }, [items, transactions, discountTotal]);
 
-  const lineDiscountTotal = lines.reduce((sum, line) => sum + line.discount, 0);
-  const subtotal = lines.reduce((sum, line) => sum + line.price, 0);
+  const lineDiscountTotal = activeLines.reduce((sum, line) => sum + line.discount, 0);
+  const subtotal = activeLines.reduce((sum, line) => sum + line.price, 0);
   const payable = Math.max(0, Math.round((subtotal - lineDiscountTotal) * 100) / 100);
   const balance = paymentBalance(estimatedTotal, amountPaid, discountTotal);
 
@@ -256,8 +290,11 @@ export function PaymentPanel({
     ? Math.max(0, Math.round((payable - displayReceived) * 100) / 100)
     : Math.max(0, Math.round((payable - amountPaid) * 100) / 100);
 
-  const paymentsOnly = useMemo(
-    () => transactions.filter((txn) => txn.kind === "PAYMENT"),
+  const moneyRows = useMemo(
+    () =>
+      transactions.filter(
+        (txn) => txn.kind === "PAYMENT" || txn.kind === "REFUND",
+      ),
     [transactions],
   );
 
@@ -343,7 +380,9 @@ export function PaymentPanel({
   function persistDiscounts(next: LineState[]) {
     setLines(next);
     const payload = JSON.stringify(
-      next.map((line) => ({ itemId: line.id, discount: line.discount })),
+      next
+        .filter((line) => !line.isCancelled)
+        .map((line) => ({ itemId: line.id, discount: line.discount })),
     );
     startDiscountTransition(async () => {
       const formData = new FormData();
@@ -393,10 +432,11 @@ export function PaymentPanel({
   }
 
   const showEmpty = lines.length === 0 && drafts.length === 0;
-  const showTotals = lines.length > 0 || amountPaid > 0 || Boolean(paymentDraft);
+  const showTotals =
+    activeLines.length > 0 || amountPaid > 0 || Boolean(paymentDraft);
 
   function addDraftRow() {
-    if (available.length === 0 || itemPending) return;
+    if (!isEditing || available.length === 0 || itemPending) return;
     const key = `draft-${Math.random().toString(36).slice(2, 10)}`;
     setDrafts((current) => [...current, { key, query: "" }]);
     setFocusDraftKey(key);
@@ -420,6 +460,7 @@ export function PaymentPanel({
   }
 
   function commitReplace(item: LineState, picked: CatalogPickItem) {
+    if (isPaid || item.isCancelled || item.hasReport) return;
     setEditingKey(null);
     setEditingQuery("");
     startItemTransition(async () => {
@@ -436,15 +477,31 @@ export function PaymentPanel({
   }
 
   function requestRemoveLine(item: LineState) {
+    if (item.isCancelled) return;
+    if (isPaid) {
+      toast.error("After payment, cancel the item instead of deleting it.");
+      return;
+    }
     if (item.hasReport) {
       toast.error("Delete the report for this item before removing it.");
       return;
     }
-    if (lines.length <= 1) {
+    if (activeLines.length <= 1) {
       toast.error("A booking must keep at least one test or package.");
       return;
     }
     setRemoveTarget(item);
+  }
+
+  function requestCancelLine(item: LineState) {
+    if (item.isCancelled) return;
+    if (item.hasReport) {
+      toast.error("Cannot cancel after a report has been uploaded for this item.");
+      return;
+    }
+    setCancelPassword("");
+    setCancelReason("");
+    setCancelTarget(item);
   }
 
   function confirmRemoveLine() {
@@ -461,343 +518,495 @@ export function PaymentPanel({
     });
   }
 
+  function confirmCancelLine() {
+    const item = cancelTarget;
+    if (!item || !cancelPassword.trim()) {
+      toast.error("Enter your admin password to cancel.");
+      return;
+    }
+    startItemTransition(async () => {
+      const result = await cancelBookingItem(bookingId, item.id, {
+        password: cancelPassword,
+        reason: cancelReason.trim() || undefined,
+      });
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      setCancelTarget(null);
+      setCancelPassword("");
+      setCancelReason("");
+      toast.success("Item cancelled.");
+      router.refresh();
+    });
+  }
+
   return (
     <>
-    <BookingSection
-      title="Tests & packages"
-      className="order-3"
-      titleAction={
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={available.length === 0 || itemPending}
-          onClick={addDraftRow}
-        >
-          <Plus />
-          Add
-        </Button>
-      }
-      headerRight={
-        <>
-          <Badge
-            variant="outline"
-            className={cn("h-8 px-2.5 text-sm", statusBadgeClass)}
-          >
-            {statusLabel}
-          </Badge>
-          <Button
-            type="button"
-            size="sm"
-            disabled={payPending || balance <= 0 || Boolean(paymentDraft)}
-            onClick={startPaymentRow}
-          >
-            <Plus />
-            Receive payment
-          </Button>
-        </>
-      }
-    >
-      <div className="flex flex-col gap-3">
-        <div className="rounded-lg border">
-          <Table className={adminCompactTableClass}>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead>Item</TableHead>
-                <TableHead className="w-20">Type</TableHead>
-                <TableHead className="w-20 text-right">Price</TableHead>
-                <TableHead className="w-20 text-right">Discount</TableHead>
-                <TableHead className="w-14 text-right">%</TableHead>
-                <TableHead className="w-20 text-right">Total</TableHead>
-                <TableHead className="w-8" />
-              </TableRow>
-            </TableHeader>
-          <TableBody>
-            {showEmpty ? (
-              <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={7} className="py-5 text-center text-muted-foreground">
-                  Click Add to insert a row, then type a test or package name.
-                </TableCell>
-              </TableRow>
-            ) : null}
-
-            {lines.map((item) => {
-              const percent = percentForItem(item);
-              const lineTotal = Math.max(
-                0,
-                Math.round((item.price - item.discount) * 100) / 100,
-              );
-              const isRenaming = editingKey === item.id;
-              return (
-                <TableRow key={item.id}>
-                  <TableCell className="whitespace-normal">
-                    {isRenaming ? (
-                      <ItemNameField
-                        value={editingQuery}
-                        suggestions={suggestionsFor(
-                          editingQuery,
-                          catalogKey({ type: item.type, id: item.catalogId }),
-                        )}
-                        autoFocus
-                        onValueChange={setEditingQuery}
-                        onPick={(picked) => commitReplace(item, picked)}
-                        onBlurEmpty={() => {
-                          setEditingKey(null);
-                          setEditingQuery("");
-                        }}
-                      />
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={itemPending || item.hasReport}
-                        className="w-full border-0 border-b border-transparent bg-transparent p-0 text-left text-xs font-medium outline-none hover:border-muted-foreground/40 disabled:cursor-not-allowed disabled:opacity-60"
-                        title={
-                          item.hasReport
-                            ? "Delete the report before replacing this item"
-                            : "Replace item"
-                        }
-                        onClick={() => {
-                          setEditingKey(item.id);
-                          setEditingQuery(item.name);
-                          setFocusDraftKey(null);
-                        }}
-                      >
-                        {item.name}
-                      </button>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {item.type === "package" ? "Package" : "Test"}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {formatAmount(item.price)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <InlineEditableValue
-                      display={item.discount > 0 ? formatAmount(item.discount) : "0"}
-                      draftSeed={item.discount > 0 ? String(item.discount) : ""}
-                      label={`Discount amount for ${item.name}`}
-                      title="Edit discount amount"
-                      onCommit={(raw) => setItemDiscountAmount(item, raw)}
-                    />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <InlineEditableValue
-                      display={percent > 0 ? `${formatPercent(percent)}%` : "0%"}
-                      draftSeed={percent > 0 ? formatPercent(percent) : ""}
-                      label={`Discount percent for ${item.name}`}
-                      title="Edit discount percent"
-                      suffix="%"
-                      onCommit={(raw) => setItemDiscountPercent(item, raw)}
-                    />
-                  </TableCell>
-                  <TableCell className="text-right font-medium tabular-nums">
-                    {formatAmount(lineTotal)}
-                  </TableCell>
-                  <TableCell className="px-1 text-right">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-sm"
-                      disabled={itemPending || item.hasReport || lines.length <= 1}
-                      aria-label={`Remove ${item.name}`}
-                      title={
-                        item.hasReport
-                          ? "Delete the report before removing this item"
-                          : "Remove item"
-                      }
-                      onClick={() => requestRemoveLine(item)}
-                    >
-                      <Trash2 />
-                    </Button>
-                  </TableCell>
+      <BookingSection
+        title="Tests & packages"
+        icon={TestTube}
+        className="order-3"
+        headerRight={
+          <>
+            <Badge
+              variant="outline"
+              className={cn("h-8 px-2.5 text-sm", statusBadgeClass)}
+            >
+              {statusLabel}
+            </Badge>
+            <Button
+              type="button"
+              size="sm"
+              disabled={payPending || balance <= 0 || Boolean(paymentDraft)}
+              onClick={startPaymentRow}
+            >
+              <Plus />
+              Receive payment
+            </Button>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-3">
+          <div className="rounded-lg border">
+            <Table className={adminCompactTableClass}>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead>Item</TableHead>
+                  <TableHead className="w-20">Type</TableHead>
+                  <TableHead className="w-20 text-right">Price</TableHead>
+                  <TableHead className="w-20 text-right">Discount</TableHead>
+                  <TableHead className="w-14 text-right">%</TableHead>
+                  <TableHead className="w-20 text-right">Total</TableHead>
+                  <TableHead className="w-8" />
                 </TableRow>
-              );
-            })}
+              </TableHeader>
+              <TableBody>
+                {showEmpty ? (
+                  <TableRow className="hover:bg-transparent">
+                    <TableCell colSpan={7} className="py-5 text-center text-muted-foreground">
+                      No tests or packages yet. Add an item below to get started.
+                    </TableCell>
+                  </TableRow>
+                ) : null}
 
-            {drafts.map((draft) => (
-              <TableRow key={draft.key} className="bg-muted/20">
-                <TableCell className="whitespace-normal">
-                  <ItemNameField
-                    value={draft.query}
-                    suggestions={suggestionsFor(draft.query)}
-                    autoFocus={focusDraftKey === draft.key}
-                    placeholder="Type test or package name…"
-                    onValueChange={(query) =>
-                      setDrafts((current) =>
-                        current.map((row) =>
-                          row.key === draft.key ? { ...row, query } : row,
-                        ),
-                      )
-                    }
-                    onPick={(picked) => commitDraft(draft.key, picked)}
-                    onBlurEmpty={() =>
-                      setDrafts((current) =>
-                        current.filter((row) => row.key !== draft.key),
-                      )
-                    }
-                  />
-                </TableCell>
-                <TableCell className="text-muted-foreground">—</TableCell>
-                <TableCell className="text-right text-muted-foreground">—</TableCell>
-                <TableCell className="text-right text-muted-foreground">—</TableCell>
-                <TableCell className="text-right text-muted-foreground">—</TableCell>
-                <TableCell className="text-right text-muted-foreground">—</TableCell>
-                <TableCell className="px-1 text-right">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label="Remove row"
-                    onClick={() =>
-                      setDrafts((current) =>
-                        current.filter((row) => row.key !== draft.key),
-                      )
-                    }
-                  >
-                    <Trash2 />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      {showTotals ? (
-        <InvoiceTotals
-          itemCount={lines.length}
-          subtotal={subtotal}
-          discount={lineDiscountTotal}
-          payable={payable}
-          due={displayDue}
-          dueEmphasis
-          paymentRowsRef={paymentDraft ? receivedEditorRef : undefined}
-          paymentRowsOnBlur={paymentDraft ? schedulePersistIfLeftEditor : undefined}
-          paymentRows={
-            <>
-              {paymentsOnly.map((txn) => (
-                <InvoiceTotalsRow
-                  key={txn.id}
-                  label={paymentMethodTitle(txn.method ?? "OTHER")}
-                  value={txn.amount}
-                  action={
-                    <DeletePaymentButton
-                      bookingId={bookingId}
-                      paymentId={txn.id}
-                      methodLabel={paymentMethodTitle(txn.method ?? "OTHER")}
-                      amount={txn.amount}
-                    />
-                  }
-                />
-              ))}
-
-              {paymentDraft ? (
-                <InvoiceTotalsRow
-                  label={
-                    <Select
-                      value={paymentDraft.method}
-                      onValueChange={(value) =>
-                        value &&
-                        setPaymentDraft({
-                          ...paymentDraft,
-                          method: value,
-                        })
-                      }
-                      disabled={payPending}
-                      items={COLLECT_METHOD_TITLES}
+                {lines.map((item) => {
+                  const percent = percentForItem(item);
+                  const lineTotal = item.isCancelled
+                    ? 0
+                    : Math.max(
+                        0,
+                        Math.round((item.price - item.discount) * 100) / 100,
+                      );
+                  const isRenaming =
+                    isEditing && !isPaid && !item.isCancelled && editingKey === item.id;
+                  const canReplace =
+                    isEditing && !isPaid && !item.isCancelled && !item.hasReport;
+                  const canHardDelete =
+                    isEditing &&
+                    !isPaid &&
+                    !item.isCancelled &&
+                    !item.hasReport &&
+                    activeLines.length > 1;
+                  const canSoftCancel =
+                    isEditing &&
+                    isPaid &&
+                    !item.isCancelled &&
+                    !item.hasReport;
+                  return (
+                    <TableRow
+                      key={item.id}
+                      className={item.isCancelled ? "opacity-60" : undefined}
                     >
-                      <SelectTrigger
-                        className={cn(
-                          inlineUnderlineSelectTriggerClass,
-                          "w-auto max-w-[7rem] text-muted-foreground",
+                      <TableCell className="whitespace-normal">
+                        {isRenaming ? (
+                          <ItemNameField
+                            value={editingQuery}
+                            suggestions={suggestionsFor(
+                              editingQuery,
+                              catalogKey({ type: item.type, id: item.catalogId }),
+                            )}
+                            autoFocus
+                            onValueChange={setEditingQuery}
+                            onPick={(picked) => commitReplace(item, picked)}
+                            onBlurEmpty={() => {
+                              setEditingKey(null);
+                              setEditingQuery("");
+                            }}
+                          />
+                        ) : canReplace ? (
+                          <button
+                            type="button"
+                            disabled={itemPending}
+                            className="w-full border-0 border-b border-transparent bg-transparent p-0 text-left text-xs font-medium outline-none hover:border-muted-foreground/40 disabled:cursor-not-allowed disabled:opacity-60"
+                            title="Replace item"
+                            onClick={() => {
+                              setEditingKey(item.id);
+                              setEditingQuery(item.name);
+                              setFocusDraftKey(null);
+                            }}
+                          >
+                            {item.name}
+                          </button>
+                        ) : (
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span
+                              className={cn(
+                                "text-xs font-medium",
+                                item.isCancelled && "line-through text-muted-foreground",
+                              )}
+                            >
+                              {item.name}
+                            </span>
+                            {item.isCancelled ? (
+                              <Badge variant="outline" className="text-[10px]">
+                                Cancelled
+                              </Badge>
+                            ) : null}
+                          </div>
                         )}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {item.type === "package" ? "Package" : "Test"}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {formatAmount(item.price)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <InlineEditableValue
+                          display={item.discount > 0 ? formatAmount(item.discount) : "0"}
+                          draftSeed={item.discount > 0 ? String(item.discount) : ""}
+                          label={`Discount amount for ${item.name}`}
+                          title="Edit discount amount"
+                          readOnly={!isEditing || item.isCancelled}
+                          onCommit={(raw) => setItemDiscountAmount(item, raw)}
+                        />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <InlineEditableValue
+                          display={percent > 0 ? `${formatPercent(percent)}%` : "0%"}
+                          draftSeed={percent > 0 ? formatPercent(percent) : ""}
+                          label={`Discount percent for ${item.name}`}
+                          title="Edit discount percent"
+                          suffix="%"
+                          readOnly={!isEditing || item.isCancelled}
+                          onCommit={(raw) => setItemDiscountPercent(item, raw)}
+                        />
+                      </TableCell>
+                      <TableCell className="text-right font-medium tabular-nums">
+                        {formatAmount(lineTotal)}
+                      </TableCell>
+                      <TableCell className="px-1 text-right">
+                        {canHardDelete ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            disabled={itemPending}
+                            aria-label={`Remove ${item.name}`}
+                            title="Remove item"
+                            onClick={() => requestRemoveLine(item)}
+                          >
+                            <Trash2 />
+                          </Button>
+                        ) : canSoftCancel ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            disabled={itemPending}
+                            aria-label={`Cancel ${item.name}`}
+                            title="Cancel item (requires password)"
+                            onClick={() => requestCancelLine(item)}
+                          >
+                            <Ban />
+                          </Button>
+                        ) : null}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+
+                {isEditing
+                  ? drafts.map((draft) => (
+                  <TableRow key={draft.key} className="bg-muted/20">
+                    <TableCell className="whitespace-normal">
+                      <ItemNameField
+                        value={draft.query}
+                        suggestions={suggestionsFor(draft.query)}
+                        autoFocus={focusDraftKey === draft.key}
+                        placeholder="Type test or package name…"
+                        onValueChange={(query) =>
+                          setDrafts((current) =>
+                            current.map((row) =>
+                              row.key === draft.key ? { ...row, query } : row,
+                            ),
+                          )
+                        }
+                        onPick={(picked) => commitDraft(draft.key, picked)}
+                        onBlurEmpty={() =>
+                          setDrafts((current) =>
+                            current.filter((row) => row.key !== draft.key),
+                          )
+                        }
+                      />
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">—</TableCell>
+                    <TableCell className="text-right text-muted-foreground">—</TableCell>
+                    <TableCell className="text-right text-muted-foreground">—</TableCell>
+                    <TableCell className="text-right text-muted-foreground">—</TableCell>
+                    <TableCell className="text-right text-muted-foreground">—</TableCell>
+                    <TableCell className="px-1 text-right">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label="Remove row"
+                        onClick={() =>
+                          setDrafts((current) =>
+                            current.filter((row) => row.key !== draft.key),
+                          )
+                        }
                       >
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {COLLECT_METHODS.map((method) => (
-                          <SelectItem key={method} value={method}>
-                            {paymentMethodTitle(method)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  }
-                  valueNode={
-                    <InlineUnderlineInput
-                      ref={amountRef}
-                      type="text"
-                      inputMode="decimal"
-                      value={paymentDraft.amount}
-                      disabled={payPending}
-                      onChange={(event) =>
-                        setPaymentDraft({
-                          ...paymentDraft,
-                          amount: event.target.value.replace(/[^\d.]/g, ""),
-                        })
+                        <Trash2 />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+                  : null}
+              </TableBody>
+            </Table>
+            {isEditing ? (
+              <div className="border-t px-2 py-1.5">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={available.length === 0 || itemPending}
+                  onClick={addDraftRow}
+                  className="h-8 w-full justify-start text-muted-foreground hover:text-foreground"
+                >
+                  <Plus />
+                  Add item
+                </Button>
+              </div>
+            ) : null}
+          </div>
+
+          {showTotals ? (
+            <InvoiceTotals
+              itemCount={activeLines.length}
+              subtotal={subtotal}
+              discount={lineDiscountTotal}
+              payable={payable}
+              due={displayDue}
+              dueEmphasis
+              paymentRowsRef={paymentDraft ? receivedEditorRef : undefined}
+              paymentRowsOnBlur={paymentDraft ? schedulePersistIfLeftEditor : undefined}
+              paymentRows={
+                <>
+                  {moneyRows.map((txn) => {
+                    const isRefund = txn.kind === "REFUND";
+                    const kindLabel =
+                      LEDGER_KIND_LABELS[txn.kind as LedgerKindId] ?? txn.kind;
+                    const methodLabel = paymentMethodTitle(txn.method ?? "OTHER");
+                    return (
+                      <InvoiceTotalsRow
+                        key={txn.id}
+                        label={
+                          isRefund
+                            ? `${kindLabel}${txn.method ? ` · ${methodLabel}` : ""}`
+                            : methodLabel
+                        }
+                        value={isRefund ? -txn.amount : txn.amount}
+                        action={
+                          isRefund ? undefined : (
+                            <DeletePaymentButton
+                              bookingId={bookingId}
+                              paymentId={txn.id}
+                              methodLabel={methodLabel}
+                              amount={txn.amount}
+                            />
+                          )
+                        }
+                      />
+                    );
+                  })}
+
+                  {paymentDraft ? (
+                    <InvoiceTotalsRow
+                      label={
+                        <Select
+                          value={paymentDraft.method}
+                          onValueChange={(value) =>
+                            value &&
+                            setPaymentDraft({
+                              ...paymentDraft,
+                              method: value,
+                            })
+                          }
+                          disabled={payPending}
+                          items={COLLECT_METHOD_TITLES}
+                        >
+                          <SelectTrigger
+                            className={cn(
+                              inlineUnderlineSelectTriggerClass,
+                              "w-auto max-w-[7rem] text-muted-foreground",
+                            )}
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {COLLECT_METHODS.map((method) => (
+                              <SelectItem key={method} value={method}>
+                                {paymentMethodTitle(method)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       }
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          event.preventDefault();
-                          persistPayment(paymentDraft);
-                        }
-                        if (event.key === "Escape") {
-                          event.preventDefault();
-                          setPaymentDraft(null);
-                        }
-                      }}
-                      className="w-14 text-right font-medium tabular-nums"
-                      aria-label="Amount received"
+                      valueNode={
+                        <InlineUnderlineInput
+                          ref={amountRef}
+                          type="text"
+                          inputMode="decimal"
+                          value={paymentDraft.amount}
+                          disabled={payPending}
+                          onChange={(event) =>
+                            setPaymentDraft({
+                              ...paymentDraft,
+                              amount: event.target.value.replace(/[^\d.]/g, ""),
+                            })
+                          }
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault();
+                              persistPayment(paymentDraft);
+                            }
+                            if (event.key === "Escape") {
+                              event.preventDefault();
+                              setPaymentDraft(null);
+                            }
+                          }}
+                          className="w-14 text-right font-medium tabular-nums"
+                          aria-label="Amount received"
+                        />
+                      }
                     />
-                  }
-                />
-              ) : null}
+                  ) : null}
 
-              {paymentsOnly.length === 0 && !paymentDraft ? (
-                <InvoiceTotalsRow label="Received" value={0} />
-              ) : null}
-            </>
+                  {moneyRows.length === 0 && !paymentDraft ? (
+                    <InvoiceTotalsRow label="Received" value={0} />
+                  ) : null}
+                </>
+              }
+            />
+          ) : null}
+        </div>
+      </BookingSection>
+
+      <Dialog
+        open={removeTarget != null}
+        onOpenChange={(open) => {
+          if (!open && !itemPending) setRemoveTarget(null);
+        }}
+      >
+        <DialogContent showCloseButton={false} className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Remove item?</DialogTitle>
+            <DialogDescription>
+              Remove {removeTarget?.name ?? "this item"} from this booking? Discounts
+              on this line will be cleared.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={itemPending}
+              onClick={() => setRemoveTarget(null)}
+            >
+              Keep item
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={itemPending || !removeTarget}
+              onClick={confirmRemoveLine}
+            >
+              {itemPending ? "Removing…" : "Remove item"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={cancelTarget != null}
+        onOpenChange={(open) => {
+          if (!open && !itemPending) {
+            setCancelTarget(null);
+            setCancelPassword("");
+            setCancelReason("");
           }
-        />
-      ) : null}
-      </div>
-    </BookingSection>
-
-    <Dialog
-      open={removeTarget != null}
-      onOpenChange={(open) => {
-        if (!open && !itemPending) setRemoveTarget(null);
-      }}
-    >
-      <DialogContent showCloseButton={false} className="sm:max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Remove item?</DialogTitle>
-          <DialogDescription>
-            Remove {removeTarget?.name ?? "this item"} from this booking? Discounts
-            on this line will be cleared.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={itemPending}
-            onClick={() => setRemoveTarget(null)}
-          >
-            Keep item
-          </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            disabled={itemPending || !removeTarget}
-            onClick={confirmRemoveLine}
-          >
-            {itemPending ? "Removing…" : "Remove item"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        }}
+      >
+        <DialogContent showCloseButton={false} className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Cancel this item?</DialogTitle>
+            <DialogDescription>
+              Cancel {cancelTarget?.name ?? "this item"} only if report preparation
+              has not started. Any overpayment will be recorded as a refund. Enter
+              your admin password to confirm.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="cancel-item-password">Admin password</Label>
+              <Input
+                id="cancel-item-password"
+                type="password"
+                autoComplete="current-password"
+                value={cancelPassword}
+                onChange={(event) => setCancelPassword(event.target.value)}
+                disabled={itemPending}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="cancel-item-reason">Reason (optional)</Label>
+              <Input
+                id="cancel-item-reason"
+                value={cancelReason}
+                onChange={(event) => setCancelReason(event.target.value)}
+                disabled={itemPending}
+                maxLength={200}
+                placeholder="Patient request…"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={itemPending}
+              onClick={() => {
+                setCancelTarget(null);
+                setCancelPassword("");
+                setCancelReason("");
+              }}
+            >
+              Keep item
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={itemPending || !cancelTarget || !cancelPassword.trim()}
+              onClick={confirmCancelLine}
+            >
+              {itemPending ? "Cancelling…" : "Cancel item"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

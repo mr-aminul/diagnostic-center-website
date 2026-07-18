@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import { ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -57,22 +59,30 @@ const STATUS_COLORS: Record<(typeof STATUSES)[number], string> = {
 export function BookingStatusForm({
   bookingId,
   currentStatus,
+  canCancel = true,
+  cancelBlockedReason = null,
 }: {
   bookingId: string;
   currentStatus: string;
+  canCancel?: boolean;
+  cancelBlockedReason?: string | null;
 }) {
   const [pending, startTransition] = useTransition();
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [password, setPassword] = useState("");
   const status = (
     STATUSES.includes(currentStatus as (typeof STATUSES)[number])
       ? currentStatus
       : "PENDING"
   ) as (typeof STATUSES)[number];
 
-  function applyStatus(next: (typeof STATUSES)[number]) {
+  function applyStatus(next: (typeof STATUSES)[number], cancelPassword?: string) {
     if (next === status) return;
     const formData = new FormData();
     formData.set("status", next);
+    if (next === "CANCELLED" && cancelPassword) {
+      formData.set("password", cancelPassword);
+    }
     startTransition(async () => {
       const result = await updateBookingStatus(
         bookingId,
@@ -84,6 +94,7 @@ export function BookingStatusForm({
           next === "CANCELLED" ? "Booking cancelled." : "Booking status updated.",
         );
         setCancelOpen(false);
+        setPassword("");
       }
       if (result.status === "error" && result.error) toast.error(result.error);
     });
@@ -91,6 +102,14 @@ export function BookingStatusForm({
 
   function changeStatus(next: (typeof STATUSES)[number]) {
     if (next === "CANCELLED") {
+      if (!canCancel) {
+        toast.error(
+          cancelBlockedReason ??
+            "Cannot cancel after report preparation has started.",
+        );
+        return;
+      }
+      setPassword("");
       setCancelOpen(true);
       return;
     }
@@ -114,41 +133,69 @@ export function BookingStatusForm({
           <ChevronDown data-icon="inline-end" className="opacity-70" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="min-w-44 p-1">
-          {STATUSES.map((option) => (
-            <DropdownMenuItem
-              key={option}
-              disabled={pending || option === status}
-              onClick={() => changeStatus(option)}
-            >
-              {STATUS_LABELS[option]}
-            </DropdownMenuItem>
-          ))}
+          {STATUSES.map((option) => {
+            const cancelDisabled = option === "CANCELLED" && !canCancel;
+            return (
+              <DropdownMenuItem
+                key={option}
+                disabled={pending || option === status || cancelDisabled}
+                title={
+                  cancelDisabled
+                    ? (cancelBlockedReason ?? undefined)
+                    : undefined
+                }
+                onClick={() => changeStatus(option)}
+              >
+                {STATUS_LABELS[option]}
+              </DropdownMenuItem>
+            );
+          })}
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
+      <Dialog
+        open={cancelOpen}
+        onOpenChange={(open) => {
+          setCancelOpen(open);
+          if (!open) setPassword("");
+        }}
+      >
         <DialogContent showCloseButton={false} className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Cancel this booking?</DialogTitle>
             <DialogDescription>
-              The patient will be notified by SMS. You can change the status again
-              later if needed.
+              The patient will be notified by SMS. Cancel is only allowed before
+              report preparation starts. Enter your admin password to confirm.
             </DialogDescription>
           </DialogHeader>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="cancel-booking-password">Admin password</Label>
+            <Input
+              id="cancel-booking-password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              disabled={pending}
+            />
+          </div>
           <DialogFooter>
             <Button
               type="button"
               variant="outline"
               disabled={pending}
-              onClick={() => setCancelOpen(false)}
+              onClick={() => {
+                setCancelOpen(false);
+                setPassword("");
+              }}
             >
               Keep booking
             </Button>
             <Button
               type="button"
               variant="destructive"
-              disabled={pending}
-              onClick={() => applyStatus("CANCELLED")}
+              disabled={pending || !password.trim()}
+              onClick={() => applyStatus("CANCELLED", password)}
             >
               {pending ? "Cancelling…" : "Cancel booking"}
             </Button>

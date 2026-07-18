@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { ArrowUpFromLine, Loader2 } from "lucide-react";
+import { Loader2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { uploadReport, type BookingActionState } from "@/app/admin/(protected)/bookings/[id]/actions";
 
@@ -62,7 +62,11 @@ export function ReportUploadForm({
         title={label}
         onClick={() => fileInputRef.current?.click()}
       >
-        {isPending ? <Loader2 className="animate-spin" /> : <ArrowUpFromLine />}
+        {isPending ? (
+          <Loader2 className="animate-spin" strokeWidth={2.5} />
+        ) : (
+          <Upload strokeWidth={2.5} />
+        )}
         {iconOnly ? null : label}
       </Button>
     </form>

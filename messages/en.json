@@ -393,6 +393,7 @@
     "errorAddressRequired": "Please provide an address for home sample collection.",
     "errorPastDate": "Preferred date cannot be in the past.",
     "errorPhoneInvalid": "Please enter a valid mobile number (at least 10 digits).",
+    "errorAgeRequired": "Please enter the patient's age.",
     "errorGenderRequired": "Please select gender.",
     "errorDateRequired": "Please choose a preferred date for home collection.",
     "errorTimeRequired": "Please choose a preferred time for home collection.",

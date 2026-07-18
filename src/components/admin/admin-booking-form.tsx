@@ -10,7 +10,14 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { Building2, Home } from "lucide-react";
+import {
+  Building2,
+  CalendarDays,
+  Home,
+  Plus,
+  TestTube,
+  UserRound,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +30,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -48,6 +54,7 @@ import { updateBookingDetails } from "@/app/admin/(protected)/bookings/[id]/acti
 import {
   BD_PHONE_HINT,
   isPlausibleBdPhone,
+  isValidAge,
   sanitizeAgeInput,
   sanitizeBdPhoneInput,
 } from "@/lib/phone";
@@ -137,6 +144,7 @@ function canAutosaveDetails(snapshot: DetailsSnapshot) {
   if (!snapshot.patientName.trim() || !isPlausibleBdPhone(snapshot.phone)) {
     return false;
   }
+  if (!isValidAge(snapshot.age)) return false;
   if (!snapshot.gender) return false;
   return true;
 }
@@ -167,6 +175,8 @@ export function AdminBookingForm({
   bookingId,
   defaults,
   invoice,
+  isEditing = true,
+  detailsLayout = "stacked",
 }: {
   mode: "create" | "edit";
   catalog: CatalogPickItem[];
@@ -175,7 +185,12 @@ export function AdminBookingForm({
   defaults?: BookingFormDefaults;
   /** Edit-mode invoice / payment panel, shown above notes & visit. */
   invoice?: ReactNode;
+  /** When false (detail view mode), fields are read-only and autosave is off. */
+  isEditing?: boolean;
+  /** `split` places Patient (+ Notes) left and Visit right. */
+  detailsLayout?: "stacked" | "split";
 }) {
+  const fieldsEditable = mode === "create" || isEditing;
   const router = useRouter();
   const [createState, createFormAction, createPending] = useActionState(
     createAdminTestBooking,
@@ -208,10 +223,19 @@ export function AdminBookingForm({
     defaults?.preferredTime ?? "",
   );
   const [notes, setNotes] = useState(defaults?.notes ?? "");
+  const [notesOpen, setNotesOpen] = useState(
+    () => Boolean(defaults?.notes?.trim()),
+  );
   const [patientConfirmOpen, setPatientConfirmOpen] = useState(false);
   const [pendingPatient, setPendingPatient] = useState<DetailsSnapshot | null>(
     null,
   );
+
+  useEffect(() => {
+    if (!fieldsEditable && !notes.trim()) {
+      setNotesOpen(false);
+    }
+  }, [fieldsEditable, notes]);
 
   const detailsSnapshot: DetailsSnapshot = {
     patientName,
@@ -274,7 +298,24 @@ export function AdminBookingForm({
       toast.error(result.error ?? "Could not save booking details.", {
         id: DETAILS_TOAST_ID,
       });
+      const lastSaved = lastSavedRef.current;
+      if (lastSaved) restoreDetailsFromSaved(lastSaved);
+      closePatientConfirm();
     });
+  }
+
+  function restoreDetailsFromSaved(saved: DetailsSnapshot) {
+    setPatientName(saved.patientName);
+    setPhone(saved.phone);
+    setAge(saved.age);
+    setGender(saved.gender);
+    setCollectionType(saved.collectionType);
+    setAddress(saved.address);
+    setBranchId(saved.branchId);
+    setPreferredDate(saved.preferredDate);
+    setPreferredTime(saved.preferredTime);
+    setNotes(saved.notes);
+    setNotesOpen(Boolean(saved.notes.trim()));
   }
 
   function discardPatientChanges() {
@@ -293,7 +334,7 @@ export function AdminBookingForm({
    * Open is deferred so the click that blurred the field cannot dismiss the dialog.
    */
   function requestPatientConfirm() {
-    if (mode !== "edit" || !bookingId) return;
+    if (mode !== "edit" || !bookingId || !isEditing) return;
     if (patientConfirmArmedRef.current || patientConfirmOpen) return;
 
     const saved = lastSavedRef.current;
@@ -301,9 +342,10 @@ export function AdminBookingForm({
     if (!saved) return;
     if (!patientIdentityChanged(saved, snapshot)) return;
     if (!canAutosaveDetails(snapshot)) {
-      toast.error("Enter a valid name and phone before updating patient details.", {
+      toast.error("Enter a valid name, phone, and age before updating patient details.", {
         id: DETAILS_TOAST_ID,
       });
+      discardPatientChanges();
       return;
     }
 
@@ -323,7 +365,7 @@ export function AdminBookingForm({
   }
 
   function onPatientSectionBlur(event: FocusEvent<HTMLDivElement>) {
-    if (mode !== "edit") return;
+    if (mode !== "edit" || !isEditing) return;
     const nextFocus = event.relatedTarget as Node | null;
     if (nextFocus && event.currentTarget.contains(nextFocus)) return;
     requestPatientConfirm();
@@ -342,9 +384,10 @@ export function AdminBookingForm({
   function confirmPatientUpdate() {
     const snapshot = detailsSnapshotRef.current;
     if (!canAutosaveDetails(snapshot)) {
-      toast.error("Enter a valid name and phone before updating patient details.", {
+      toast.error("Enter a valid name, phone, and age before updating patient details.", {
         id: DETAILS_TOAST_ID,
       });
+      discardPatientChanges();
       return;
     }
     persistDetails(snapshot);
@@ -382,7 +425,7 @@ export function AdminBookingForm({
   }, [createState, mode, router]);
 
   useEffect(() => {
-    if (mode !== "edit" || !bookingId) return;
+    if (mode !== "edit" || !bookingId || !isEditing) return;
     const lastSaved = lastSavedRef.current;
     if (!lastSaved) return;
     if (detailsKey === serializeDetails(lastSaved)) return;
@@ -414,7 +457,7 @@ export function AdminBookingForm({
     return () => window.clearTimeout(timer);
     // Snapshot fields are represented by detailsKey; intentionally omit the object.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- debounce on serialized details only
-  }, [mode, bookingId, detailsKey]);
+  }, [mode, bookingId, isEditing, detailsKey]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -457,82 +500,623 @@ export function AdminBookingForm({
         ) : null}
         <input key={`${idPrefix}-gender`} type="hidden" name="gender" value={gender} />
 
-        <BookingSection key={`${idPrefix}-patient`} title="Patient" className="order-1">
-          <div className="flex flex-col gap-3" onBlur={onPatientSectionBlur}>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor={`${idPrefix}-patientName`}>Patient name</Label>
-                <Input
-                  id={`${idPrefix}-patientName`}
-                  name="patientName"
-                  required
-                  maxLength={120}
-                  autoComplete="name"
-                  value={patientName}
-                  onChange={(event) =>
-                    setPatientName(event.target.value.slice(0, 120))
-                  }
-                  autoFocus={mode === "create"}
-                />
+        {detailsLayout === "split" ? (
+          <div
+            key={`${idPrefix}-details-split`}
+            className="order-1 grid gap-3 lg:grid-cols-2"
+          >
+            <BookingSection
+              key={`${idPrefix}-patient`}
+              title="Patient"
+              icon={UserRound}
+              compact
+              headerRight={
+                fieldsEditable && !notesOpen && !notes.trim() ? (
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                    onClick={() => setNotesOpen(true)}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Add note
+                  </button>
+                ) : null
+              }
+            >
+              <div className="flex flex-col gap-2" onBlur={onPatientSectionBlur}>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="flex flex-col gap-1">
+                    <Label htmlFor={`${idPrefix}-patientName`}>Patient name</Label>
+                    <Input
+                      id={`${idPrefix}-patientName`}
+                      name="patientName"
+                      required
+                      maxLength={120}
+                      autoComplete="name"
+                      value={patientName}
+                      readOnly={!fieldsEditable}
+                      disabled={!fieldsEditable}
+                      className="h-9"
+                      onChange={(event) =>
+                        setPatientName(event.target.value.slice(0, 120))
+                      }
+                      autoFocus={mode === "create"}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <Label htmlFor={`${idPrefix}-phone`}>Mobile number</Label>
+                    <Input
+                      id={`${idPrefix}-phone`}
+                      name="phone"
+                      type="tel"
+                      required
+                      maxLength={14}
+                      placeholder={BD_PHONE_HINT}
+                      inputMode="numeric"
+                      autoComplete="tel"
+                      pattern="^(?:\+?880|0)?1[3-9]\d{8}$"
+                      title={BD_PHONE_HINT}
+                      value={phone}
+                      readOnly={!fieldsEditable}
+                      disabled={!fieldsEditable}
+                      className="h-9"
+                      onChange={(event) =>
+                        setPhone(sanitizeBdPhoneInput(event.target.value))
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="flex flex-col gap-1">
+                    <Label htmlFor={`${idPrefix}-age`}>Age</Label>
+                    <Input
+                      id={`${idPrefix}-age`}
+                      name="age"
+                      type="text"
+                      inputMode="numeric"
+                      required
+                      min={0}
+                      max={130}
+                      maxLength={3}
+                      value={age}
+                      readOnly={!fieldsEditable}
+                      disabled={!fieldsEditable}
+                      className="h-9"
+                      onChange={(event) =>
+                        setAge(sanitizeAgeInput(event.target.value))
+                      }
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <Label>Gender</Label>
+                    <GenderRadioGroup
+                      idPrefix={`${idPrefix}-gender`}
+                      value={gender}
+                      onValueChange={setGender}
+                      required
+                      disabled={!fieldsEditable}
+                      labels={{ male: "Male", female: "Female", other: "Other" }}
+                    />
+                  </div>
+                </div>
+                {notesOpen || notes.trim() ? (
+                  <div className="flex flex-col gap-1">
+                    <Label htmlFor={`${idPrefix}-notes`}>Notes</Label>
+                    <Input
+                      id={`${idPrefix}-notes`}
+                      name="notes"
+                      maxLength={500}
+                      placeholder="Optional"
+                      aria-label="Notes"
+                      value={notes}
+                      readOnly={!fieldsEditable}
+                      disabled={!fieldsEditable}
+                      className="h-9"
+                      autoFocus={notesOpen && !notes.trim() && fieldsEditable}
+                      onChange={(event) => setNotes(event.target.value)}
+                      onBlur={(event) => {
+                        if (!event.target.value.trim()) setNotesOpen(false);
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <input type="hidden" name="notes" value={notes} />
+                )}
               </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor={`${idPrefix}-phone`}>Mobile number</Label>
-                <Input
-                  id={`${idPrefix}-phone`}
-                  name="phone"
-                  type="tel"
-                  required
-                  maxLength={14}
-                  placeholder={BD_PHONE_HINT}
-                  inputMode="numeric"
-                  autoComplete="tel"
-                  pattern="^(?:\+?880|0)?1[3-9]\d{8}$"
-                  title={BD_PHONE_HINT}
-                  value={phone}
-                  onChange={(event) =>
-                    setPhone(sanitizeBdPhoneInput(event.target.value))
-                  }
-                />
-              </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor={`${idPrefix}-age`}>
-                  Age <span className="text-muted-foreground">(optional)</span>
-                </Label>
-                <Input
-                  id={`${idPrefix}-age`}
-                  name="age"
-                  type="text"
-                  inputMode="numeric"
-                  min={0}
-                  max={130}
-                  maxLength={3}
-                  value={age}
-                  onChange={(event) =>
-                    setAge(sanitizeAgeInput(event.target.value))
-                  }
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label>Gender</Label>
-                <GenderRadioGroup
-                  idPrefix={`${idPrefix}-gender`}
-                  value={gender}
-                  onValueChange={setGender}
-                  required
-                  labels={{ male: "Male", female: "Female", other: "Other" }}
-                />
-              </div>
-            </div>
-          </div>
-        </BookingSection>
+            </BookingSection>
 
-        {mode === "create" ? (
+            <BookingSection
+              key={`${idPrefix}-visit`}
+              title="Visit"
+              icon={CalendarDays}
+              compact
+            >
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-1">
+                  <Label>Collection</Label>
+                  <RadioGroup
+                    value={collectionType}
+                    disabled={!fieldsEditable}
+                    onValueChange={(value) => {
+                      if (!fieldsEditable) return;
+                      if (value === "IN_CENTER" || value === "HOME") {
+                        setCollectionType(value);
+                      }
+                    }}
+                    className="grid gap-1.5 sm:grid-cols-2"
+                  >
+                    <label
+                      className={cn(
+                        "flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm",
+                        fieldsEditable
+                          ? "cursor-pointer"
+                          : "cursor-default opacity-80",
+                        collectionType === "IN_CENTER" &&
+                          "border-primary bg-primary/5",
+                      )}
+                    >
+                      <RadioGroupItem
+                        value="IN_CENTER"
+                        disabled={!fieldsEditable}
+                      />
+                      <Building2
+                        className="size-3.5 shrink-0 text-muted-foreground"
+                        aria-hidden
+                      />
+                      In center
+                    </label>
+                    <label
+                      className={cn(
+                        "flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm",
+                        fieldsEditable
+                          ? "cursor-pointer"
+                          : "cursor-default opacity-80",
+                        collectionType === "HOME" && "border-primary bg-primary/5",
+                      )}
+                    >
+                      <RadioGroupItem value="HOME" disabled={!fieldsEditable} />
+                      <Home
+                        className="size-3.5 shrink-0 text-muted-foreground"
+                        aria-hidden
+                      />
+                      Home collection
+                    </label>
+                  </RadioGroup>
+                </div>
+
+                {collectionType === "HOME" ? (
+                  <div className="flex flex-col gap-1">
+                    <Label htmlFor={`${idPrefix}-address`}>
+                      Collection address
+                    </Label>
+                    <Input
+                      id={`${idPrefix}-address`}
+                      name="address"
+                      required
+                      maxLength={300}
+                      placeholder="House, road, area…"
+                      value={address}
+                      readOnly={!fieldsEditable}
+                      disabled={!fieldsEditable}
+                      className="h-9"
+                      onChange={(event) => setAddress(event.target.value)}
+                    />
+                  </div>
+                ) : null}
+
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {collectionType === "IN_CENTER" && branches.length > 1 ? (
+                    <div className="flex flex-col gap-1">
+                      <Label htmlFor={`${idPrefix}-branch`}>Branch</Label>
+                      <Select
+                        name="branchId"
+                        value={branchId || null}
+                        disabled={!fieldsEditable}
+                        onValueChange={(value) => {
+                          if (value) setBranchId(value);
+                        }}
+                        items={Object.fromEntries(
+                          branches.map((b) => [b.id, b.name]),
+                        )}
+                      >
+                        <SelectTrigger
+                          id={`${idPrefix}-branch`}
+                          size="sm"
+                          className="w-full"
+                        >
+                          <SelectValue placeholder="Select branch" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {branches.map((branch) => (
+                            <SelectItem key={branch.id} value={branch.id}>
+                              {branch.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : collectionType === "IN_CENTER" && branches.length === 1 ? (
+                    <input type="hidden" name="branchId" value={branches[0].id} />
+                  ) : null}
+
+                  <div className="flex flex-col gap-1">
+                    <Label htmlFor={`${idPrefix}-preferredDate`}>
+                      Preferred date
+                      {collectionType === "HOME" ? null : (
+                        <span className="text-muted-foreground"> (optional)</span>
+                      )}
+                    </Label>
+                    <Input
+                      id={`${idPrefix}-preferredDate`}
+                      name="preferredDate"
+                      type="date"
+                      min={mode === "create" ? todayDateInputValue() : undefined}
+                      required={collectionType === "HOME"}
+                      value={preferredDate}
+                      readOnly={!fieldsEditable}
+                      disabled={!fieldsEditable}
+                      className="h-9"
+                      onChange={(event) => setPreferredDate(event.target.value)}
+                    />
+                  </div>
+
+                  {collectionType === "HOME" ? (
+                    <div className="flex flex-col gap-1">
+                      <Label htmlFor={`${idPrefix}-preferredTime`}>
+                        Preferred time
+                      </Label>
+                      <Select
+                        name="preferredTime"
+                        required
+                        value={preferredTime || null}
+                        disabled={!fieldsEditable}
+                        onValueChange={(value) => {
+                          if (value) setPreferredTime(value);
+                        }}
+                        items={Object.fromEntries(
+                          TIME_SLOT_VALUES.map((slot) => [slot, slot]),
+                        )}
+                      >
+                        <SelectTrigger
+                          id={`${idPrefix}-preferredTime`}
+                          size="sm"
+                          className="w-full"
+                        >
+                          <SelectValue placeholder="Select time slot" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TIME_SLOT_VALUES.map((slot) => (
+                            <SelectItem key={slot} value={slot}>
+                              {slot}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </BookingSection>
+          </div>
+        ) : (
+          <>
+            <BookingSection
+              key={`${idPrefix}-patient`}
+              title="Patient"
+              icon={UserRound}
+              className="order-1"
+              headerRight={
+                fieldsEditable && !notesOpen && !notes.trim() ? (
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                    onClick={() => setNotesOpen(true)}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Add note
+                  </button>
+                ) : null
+              }
+            >
+              <div className="flex flex-col gap-3" onBlur={onPatientSectionBlur}>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor={`${idPrefix}-patientName`}>Patient name</Label>
+                    <Input
+                      id={`${idPrefix}-patientName`}
+                      name="patientName"
+                      required
+                      maxLength={120}
+                      autoComplete="name"
+                      value={patientName}
+                      readOnly={!fieldsEditable}
+                      disabled={!fieldsEditable}
+                      onChange={(event) =>
+                        setPatientName(event.target.value.slice(0, 120))
+                      }
+                      autoFocus={mode === "create"}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor={`${idPrefix}-phone`}>Mobile number</Label>
+                    <Input
+                      id={`${idPrefix}-phone`}
+                      name="phone"
+                      type="tel"
+                      required
+                      maxLength={14}
+                      placeholder={BD_PHONE_HINT}
+                      inputMode="numeric"
+                      autoComplete="tel"
+                      pattern="^(?:\+?880|0)?1[3-9]\d{8}$"
+                      title={BD_PHONE_HINT}
+                      value={phone}
+                      readOnly={!fieldsEditable}
+                      disabled={!fieldsEditable}
+                      onChange={(event) =>
+                        setPhone(sanitizeBdPhoneInput(event.target.value))
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor={`${idPrefix}-age`}>Age</Label>
+                    <Input
+                      id={`${idPrefix}-age`}
+                      name="age"
+                      type="text"
+                      inputMode="numeric"
+                      required
+                      min={0}
+                      max={130}
+                      maxLength={3}
+                      value={age}
+                      readOnly={!fieldsEditable}
+                      disabled={!fieldsEditable}
+                      onChange={(event) =>
+                        setAge(sanitizeAgeInput(event.target.value))
+                      }
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label>Gender</Label>
+                    <GenderRadioGroup
+                      idPrefix={`${idPrefix}-gender`}
+                      value={gender}
+                      onValueChange={setGender}
+                      required
+                      disabled={!fieldsEditable}
+                      labels={{ male: "Male", female: "Female", other: "Other" }}
+                    />
+                  </div>
+                </div>
+                {notesOpen || notes.trim() ? (
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor={`${idPrefix}-notes`}>Notes</Label>
+                    <Input
+                      id={`${idPrefix}-notes`}
+                      name="notes"
+                      maxLength={500}
+                      placeholder="Optional"
+                      aria-label="Notes"
+                      value={notes}
+                      readOnly={!fieldsEditable}
+                      disabled={!fieldsEditable}
+                      autoFocus={notesOpen && !notes.trim() && fieldsEditable}
+                      onChange={(event) => setNotes(event.target.value)}
+                      onBlur={(event) => {
+                        if (!event.target.value.trim()) setNotesOpen(false);
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <input type="hidden" name="notes" value={notes} />
+                )}
+              </div>
+            </BookingSection>
+
+            {mode === "create" ? (
+              catalog.length === 0 ? (
+                <BookingSection
+                  key={`${idPrefix}-catalog-empty`}
+                  title="Tests & packages"
+                  icon={TestTube}
+                  className="order-3"
+                >
+                  <p className="text-sm text-muted-foreground">
+                    Add active tests or packages before creating bookings.
+                  </p>
+                </BookingSection>
+              ) : (
+                <CatalogItemCombobox
+                  key={`${idPrefix}-catalog`}
+                  id={`${idPrefix}-catalog`}
+                  items={catalog}
+                  selected={selected}
+                  onSelectedChange={setSelected}
+                  paymentDue={createNetRounded}
+                  paymentDraft={paymentDraft}
+                  onPaymentDraftChange={setPaymentDraft}
+                  sectionClassName="order-3"
+                />
+              )
+            ) : null}
+
+            <BookingSection
+              key={`${idPrefix}-visit`}
+              title="Visit"
+              icon={CalendarDays}
+              className="order-5"
+            >
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2">
+                  <Label>Collection</Label>
+                  <RadioGroup
+                    value={collectionType}
+                    disabled={!fieldsEditable}
+                    onValueChange={(value) => {
+                      if (!fieldsEditable) return;
+                      if (value === "IN_CENTER" || value === "HOME") {
+                        setCollectionType(value);
+                      }
+                    }}
+                    className="grid gap-2 sm:grid-cols-2"
+                  >
+                    <label
+                      className={cn(
+                        "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm",
+                        fieldsEditable
+                          ? "cursor-pointer"
+                          : "cursor-default opacity-80",
+                        collectionType === "IN_CENTER" &&
+                          "border-primary bg-primary/5",
+                      )}
+                    >
+                      <RadioGroupItem
+                        value="IN_CENTER"
+                        disabled={!fieldsEditable}
+                      />
+                      <Building2
+                        className="size-4 shrink-0 text-muted-foreground"
+                        aria-hidden
+                      />
+                      In center
+                    </label>
+                    <label
+                      className={cn(
+                        "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm",
+                        fieldsEditable
+                          ? "cursor-pointer"
+                          : "cursor-default opacity-80",
+                        collectionType === "HOME" && "border-primary bg-primary/5",
+                      )}
+                    >
+                      <RadioGroupItem value="HOME" disabled={!fieldsEditable} />
+                      <Home
+                        className="size-4 shrink-0 text-muted-foreground"
+                        aria-hidden
+                      />
+                      Home collection
+                    </label>
+                  </RadioGroup>
+                </div>
+
+                {collectionType === "HOME" ? (
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor={`${idPrefix}-address`}>
+                      Collection address
+                    </Label>
+                    <Input
+                      id={`${idPrefix}-address`}
+                      name="address"
+                      required
+                      maxLength={300}
+                      placeholder="House, road, area…"
+                      value={address}
+                      readOnly={!fieldsEditable}
+                      disabled={!fieldsEditable}
+                      onChange={(event) => setAddress(event.target.value)}
+                    />
+                  </div>
+                ) : null}
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {collectionType === "IN_CENTER" && branches.length > 1 ? (
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor={`${idPrefix}-branch`}>Branch</Label>
+                      <Select
+                        name="branchId"
+                        value={branchId || null}
+                        disabled={!fieldsEditable}
+                        onValueChange={(value) => {
+                          if (value) setBranchId(value);
+                        }}
+                        items={Object.fromEntries(
+                          branches.map((b) => [b.id, b.name]),
+                        )}
+                      >
+                        <SelectTrigger id={`${idPrefix}-branch`} className="w-full">
+                          <SelectValue placeholder="Select branch" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {branches.map((branch) => (
+                            <SelectItem key={branch.id} value={branch.id}>
+                              {branch.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : collectionType === "IN_CENTER" && branches.length === 1 ? (
+                    <input type="hidden" name="branchId" value={branches[0].id} />
+                  ) : null}
+
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor={`${idPrefix}-preferredDate`}>
+                      Preferred date
+                      {collectionType === "HOME" ? null : (
+                        <span className="text-muted-foreground"> (optional)</span>
+                      )}
+                    </Label>
+                    <Input
+                      id={`${idPrefix}-preferredDate`}
+                      name="preferredDate"
+                      type="date"
+                      min={mode === "create" ? todayDateInputValue() : undefined}
+                      required={collectionType === "HOME"}
+                      value={preferredDate}
+                      readOnly={!fieldsEditable}
+                      disabled={!fieldsEditable}
+                      onChange={(event) => setPreferredDate(event.target.value)}
+                    />
+                  </div>
+
+                  {collectionType === "HOME" ? (
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor={`${idPrefix}-preferredTime`}>
+                        Preferred time
+                      </Label>
+                      <Select
+                        name="preferredTime"
+                        required
+                        value={preferredTime || null}
+                        disabled={!fieldsEditable}
+                        onValueChange={(value) => {
+                          if (value) setPreferredTime(value);
+                        }}
+                        items={Object.fromEntries(
+                          TIME_SLOT_VALUES.map((slot) => [slot, slot]),
+                        )}
+                      >
+                        <SelectTrigger
+                          id={`${idPrefix}-preferredTime`}
+                          className="w-full"
+                        >
+                          <SelectValue placeholder="Select time slot" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TIME_SLOT_VALUES.map((slot) => (
+                            <SelectItem key={slot} value={slot}>
+                              {slot}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </BookingSection>
+          </>
+        )}
+
+        {detailsLayout === "split" && mode === "create" ? (
           catalog.length === 0 ? (
             <BookingSection
               key={`${idPrefix}-catalog-empty`}
               title="Tests & packages"
+              icon={TestTube}
               className="order-3"
             >
               <p className="text-sm text-muted-foreground">
@@ -554,150 +1138,6 @@ export function AdminBookingForm({
           )
         ) : null}
 
-        <BookingSection key={`${idPrefix}-notes`} title="Notes" className="order-4">
-          <Textarea
-            id={`${idPrefix}-notes`}
-            name="notes"
-            rows={2}
-            maxLength={500}
-            placeholder="Optional"
-            aria-label="Notes"
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
-          />
-        </BookingSection>
-
-        <BookingSection key={`${idPrefix}-visit`} title="Visit" className="order-5">
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-2">
-              <Label>Collection</Label>
-              <RadioGroup
-                value={collectionType}
-                onValueChange={(value) => {
-                  if (value === "IN_CENTER" || value === "HOME") {
-                    setCollectionType(value);
-                  }
-                }}
-                className="grid gap-2 sm:grid-cols-2"
-              >
-                <label
-                  className={cn(
-                    "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm",
-                    "cursor-pointer",
-                    collectionType === "IN_CENTER" && "border-primary bg-primary/5",
-                  )}
-                >
-                  <RadioGroupItem value="IN_CENTER" />
-                  <Building2 className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                  In center
-                </label>
-                <label
-                  className={cn(
-                    "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm",
-                    "cursor-pointer",
-                    collectionType === "HOME" && "border-primary bg-primary/5",
-                  )}
-                >
-                  <RadioGroupItem value="HOME" />
-                  <Home className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                  Home collection
-                </label>
-              </RadioGroup>
-            </div>
-
-            {collectionType === "HOME" ? (
-              <div className="flex flex-col gap-2">
-                <Label htmlFor={`${idPrefix}-address`}>Collection address</Label>
-                <Textarea
-                  id={`${idPrefix}-address`}
-                  name="address"
-                  required
-                  rows={2}
-                  maxLength={300}
-                  placeholder="House, road, area…"
-                  value={address}
-                  onChange={(event) => setAddress(event.target.value)}
-                />
-              </div>
-            ) : null}
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              {collectionType === "IN_CENTER" && branches.length > 1 ? (
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor={`${idPrefix}-branch`}>Branch</Label>
-                  <Select
-                    name="branchId"
-                    value={branchId || null}
-                    onValueChange={(value) => {
-                      if (value) setBranchId(value);
-                    }}
-                    items={Object.fromEntries(branches.map((b) => [b.id, b.name]))}
-                  >
-                    <SelectTrigger id={`${idPrefix}-branch`} className="w-full">
-                      <SelectValue placeholder="Select branch" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {branches.map((branch) => (
-                        <SelectItem key={branch.id} value={branch.id}>
-                          {branch.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ) : collectionType === "IN_CENTER" && branches.length === 1 ? (
-                <input type="hidden" name="branchId" value={branches[0].id} />
-              ) : null}
-
-              <div className="flex flex-col gap-2">
-                <Label htmlFor={`${idPrefix}-preferredDate`}>
-                  Preferred date
-                  {collectionType === "HOME" ? null : (
-                    <span className="text-muted-foreground"> (optional)</span>
-                  )}
-                </Label>
-                <Input
-                  id={`${idPrefix}-preferredDate`}
-                  name="preferredDate"
-                  type="date"
-                  min={mode === "create" ? todayDateInputValue() : undefined}
-                  required={collectionType === "HOME"}
-                  value={preferredDate}
-                  onChange={(event) => setPreferredDate(event.target.value)}
-                />
-              </div>
-
-              {collectionType === "HOME" ? (
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor={`${idPrefix}-preferredTime`}>Preferred time</Label>
-                  <Select
-                    name="preferredTime"
-                    required
-                    value={preferredTime || null}
-                    onValueChange={(value) => {
-                      if (value) setPreferredTime(value);
-                    }}
-                    items={Object.fromEntries(
-                      TIME_SLOT_VALUES.map((slot) => [slot, slot]),
-                    )}
-                  >
-                    <SelectTrigger id={`${idPrefix}-preferredTime`} className="w-full">
-                      <SelectValue placeholder="Select time slot" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TIME_SLOT_VALUES.map((slot) => (
-                        <SelectItem key={slot} value={slot}>
-                          {slot}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </BookingSection>
-
         {mode === "create" ? (
           <div
             key={`${idPrefix}-create-actions`}
@@ -709,6 +1149,7 @@ export function AdminBookingForm({
                 createPending ||
                 !patientName.trim() ||
                 !isPlausibleBdPhone(phone) ||
+                !isValidAge(age) ||
                 !gender ||
                 selected.length === 0 ||
                 catalog.length === 0 ||

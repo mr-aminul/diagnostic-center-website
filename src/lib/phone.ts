@@ -52,7 +52,7 @@ export function sanitizeBdPhoneInput(raw: string): string {
   return trimmed.replace(/\D/g, "").slice(0, 14);
 }
 
-/** Optional age: empty, or integer 0–130. */
+/** Digits-only age input, capped at 130. Empty string allowed while typing. */
 export function sanitizeAgeInput(raw: string): string {
   const digits = raw.replace(/\D/g, "").slice(0, 3);
   if (digits === "") return "";
@@ -62,8 +62,9 @@ export function sanitizeAgeInput(raw: string): string {
   return String(value);
 }
 
-export function isValidOptionalAge(raw: string): boolean {
-  if (raw.trim() === "") return true;
+/** Required age: integer 0–130 (empty is invalid). */
+export function isValidAge(raw: string): boolean {
+  if (raw.trim() === "") return false;
   const value = Number(raw);
   return Number.isInteger(value) && value >= 0 && value <= 130;
 }

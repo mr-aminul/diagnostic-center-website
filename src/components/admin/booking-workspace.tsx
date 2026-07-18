@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export function BookingWorkspace({
@@ -23,28 +23,45 @@ export function BookingWorkspace({
 
 export function BookingSection({
   title,
+  icon: Icon,
   titleAction,
   headerRight,
   children,
   className,
+  compact = false,
 }: {
   title: string;
+  icon?: ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
   /** Control placed immediately after the title (e.g. Add). */
   titleAction?: ReactNode;
   /** Actions aligned to the upper-right of the section (e.g. status + button). */
   headerRight?: ReactNode;
   children: ReactNode;
   className?: string;
+  compact?: boolean;
 }) {
   return (
-    <section className={cn("rounded-xl border bg-card p-4", className)}>
+    <section
+      className={cn(
+        "rounded-xl border bg-card",
+        compact ? "p-3" : "p-4",
+        className,
+      )}
+    >
       <div
         className={cn(
-          "mb-3 flex items-center gap-2",
+          "flex items-center gap-2",
+          compact ? "mb-2" : "mb-3",
           headerRight ? "justify-between" : null,
         )}
       >
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 items-center gap-1.5">
+          {Icon ? (
+            <Icon
+              className="h-3.5 w-3.5 shrink-0 text-primary"
+              aria-hidden
+            />
+          ) : null}
           <h2 className="text-sm font-semibold">{title}</h2>
           {titleAction}
         </div>

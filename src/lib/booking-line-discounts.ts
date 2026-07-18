@@ -19,9 +19,10 @@ export async function replaceBookingLineDiscounts(
   });
   if (!booking) return null;
 
-  const itemIds = new Set(booking.items.map((item) => item.id));
+  const activeItems = booking.items.filter((item) => item.cancelledAt == null);
+  const itemIds = new Set(activeItems.map((item) => item.id));
   const priceById = new Map(
-    booking.items.map((item) => [item.id, Number(item.priceSnapshot)]),
+    activeItems.map((item) => [item.id, Number(item.priceSnapshot)]),
   );
 
   // Only clear line-tagged discounts — preserve untagged/manual DISCOUNT rows.

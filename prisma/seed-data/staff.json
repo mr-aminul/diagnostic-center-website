@@ -2,7 +2,7 @@
   {
     "id": "seed-staff-admin-active",
     "name": "Farhana Rahman",
-    "phone": "+8801711000001",
+    "phone": "01711000001",
     "email": "farhana.rahman@example.com",
     "role": "ADMIN",
     "department": "ADMINISTRATION",
@@ -14,7 +14,7 @@
   {
     "id": "seed-staff-admin-inactive",
     "name": "Kamrul Hasan",
-    "phone": "+8801711000002",
+    "phone": "01711000002",
     "email": "kamrul.hasan@example.com",
     "role": "ADMIN",
     "department": "BILLING",
@@ -26,7 +26,7 @@
   {
     "id": "seed-staff-staff-active",
     "name": "Nusrat Jahan",
-    "phone": "+8801711000003",
+    "phone": "01711000003",
     "email": "nusrat.jahan@example.com",
     "role": "STAFF",
     "department": "RECEPTION",
@@ -38,7 +38,7 @@
   {
     "id": "seed-staff-staff-inactive",
     "name": "Imran Hossain",
-    "phone": "+8801711000004",
+    "phone": "01711000004",
     "email": "imran.hossain@example.com",
     "role": "STAFF",
     "department": "SAMPLE_COLLECTION",
@@ -50,7 +50,7 @@
   {
     "id": "seed-staff-tech-active",
     "name": "Laila Sultana",
-    "phone": "+8801711000005",
+    "phone": "01711000005",
     "email": "laila.sultana@example.com",
     "role": "TECHNICIAN",
     "department": "LABORATORY",
@@ -62,7 +62,7 @@
   {
     "id": "seed-staff-tech-inactive",
     "name": "Rafiqul Alam",
-    "phone": "+8801711000006",
+    "phone": "01711000006",
     "email": "rafiqul.alam@example.com",
     "role": "TECHNICIAN",
     "department": "RADIOLOGY",

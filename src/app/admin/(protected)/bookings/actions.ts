@@ -11,7 +11,7 @@ import { getResolvedSiteConfig } from "@/lib/data/site-settings";
 import {
   BD_PHONE_INVALID_MESSAGE,
   formatBdPhoneForStorage,
-  isValidOptionalAge,
+  isValidAge,
 } from "@/lib/phone";
 import { TIME_SLOT_VALUES } from "@/lib/time-slots";
 
@@ -61,7 +61,7 @@ const bookSchema = z
       .min(1, "Patient name is required.")
       .max(120, "Patient name is too long."),
     phone: z.string().trim().min(1, "Phone is required.").max(20),
-    age: z.string().optional(),
+    age: z.string().trim().min(1, "Enter the patient's age."),
     gender: z.enum(["MALE", "FEMALE", "OTHER"], {
       message: "Select the patient's gender.",
     }),
@@ -83,7 +83,7 @@ const bookSchema = z
         message: BD_PHONE_INVALID_MESSAGE,
       });
     }
-    if (data.age != null && data.age !== "" && !isValidOptionalAge(data.age)) {
+    if (!isValidAge(data.age)) {
       ctx.addIssue({
         code: "custom",
         path: ["age"],
@@ -209,10 +209,7 @@ export async function createAdminTestBooking(
       ? ("ONLINE" as const)
       : ("CASH" as const);
 
-  const age =
-    parsed.data.age != null && parsed.data.age !== ""
-      ? Number.parseInt(parsed.data.age, 10)
-      : undefined;
+  const age = Number.parseInt(parsed.data.age, 10);
 
   const result = await bookTestBooking({
     collectionType: parsed.data.collectionType,

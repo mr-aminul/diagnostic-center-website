@@ -3,17 +3,21 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { requireSession } from "@/lib/auth";
+import { requireSession, verifySessionPassword } from "@/lib/auth";
 import { reportStorage } from "@/lib/storage";
 import { sendSms } from "@/lib/sms";
 import { siteConfig } from "@/config/site";
-import { syncBookingPaymentTotals } from "@/lib/booking-payments";
+import {
+  refundBookingOverpayment,
+  syncBookingPaymentTotals,
+} from "@/lib/booking-payments";
 import { recomputeBookingInvoice } from "@/lib/booking-items";
 import { replaceBookingLineDiscounts } from "@/lib/booking-line-discounts";
+import { canCancelBooking, canCancelBookingItem } from "@/lib/booking-cancel";
 import {
   BD_PHONE_INVALID_MESSAGE,
   formatBdPhoneForStorage,
-  isValidOptionalAge,
+  isValidAge,
 } from "@/lib/phone";
 import { TIME_SLOT_VALUES } from "@/lib/time-slots";
 
@@ -43,11 +47,55 @@ export async function updateBookingStatus(
   _previousState: BookingActionState,
   formData: FormData
 ): Promise<BookingActionState> {
-  await requireSession();
+  const session = await requireSession();
 
   const parsedStatus = statusSchema.safeParse(formData.get("status"));
   if (!parsedStatus.success) {
     return { status: "error", error: "Invalid status." };
+  }
+
+  const existing = await db.booking.findUnique({
+    where: { id: bookingId },
+    include: { items: { include: { report: true } } },
+  });
+  if (!existing) {
+    return { status: "error", error: "Booking not found." };
+  }
+
+  if (parsedStatus.data === "CANCELLED") {
+    const password = String(formData.get("password") ?? "");
+    if (!(await verifySessionPassword(password))) {
+      return { status: "error", error: "Incorrect password." };
+    }
+
+    const gate = canCancelBooking(existing);
+    if (!gate.ok) {
+      return { status: "error", error: gate.reason };
+    }
+
+    const now = new Date();
+    const reason = String(formData.get("cancelReason") ?? "").trim() || null;
+    const activeIds = existing.items
+      .filter((item) => item.cancelledAt == null)
+      .map((item) => item.id);
+
+    if (activeIds.length > 0) {
+      await db.bookingItem.updateMany({
+        where: { id: { in: activeIds } },
+        data: {
+          cancelledAt: now,
+          cancelledById: session.userId,
+          cancelReason: reason,
+        },
+      });
+    }
+
+    await recomputeBookingInvoice(bookingId, session.userId);
+    await refundBookingOverpayment(
+      bookingId,
+      session.userId,
+      "Refund after booking cancellation",
+    );
   }
 
   const booking = await db.booking.update({
@@ -76,7 +124,7 @@ const detailsSchema = z
       .min(1, "Patient name is required.")
       .max(120, "Patient name is too long."),
     phone: z.string().trim().min(1, "Phone is required.").max(20),
-    age: z.string().optional(),
+    age: z.string().trim().min(1, "Enter the patient's age."),
     gender: z.enum(["MALE", "FEMALE", "OTHER"], {
       message: "Select the patient's gender.",
     }),
@@ -99,7 +147,7 @@ const detailsSchema = z
         message: BD_PHONE_INVALID_MESSAGE,
       });
     }
-    if (data.age != null && data.age !== "" && !isValidOptionalAge(data.age)) {
+    if (!isValidAge(data.age)) {
       ctx.addIssue({
         code: "custom",
         path: ["age"],
@@ -159,8 +207,7 @@ export async function updateBookingDetails(
   }
 
   const data = parsed.data;
-  const age =
-    data.age != null && data.age !== "" ? Number.parseInt(data.age, 10) : null;
+  const age = Number.parseInt(data.age, 10);
   await db.booking.update({
     where: { id: bookingId },
     data: {
@@ -458,8 +505,12 @@ export async function addBookingItem(
     include: { items: true },
   });
   if (!booking) return { error: "Booking not found." };
+  if (booking.status === "CANCELLED") {
+    return { error: "Cannot add items to a cancelled booking." };
+  }
 
-  const alreadyOnBooking = booking.items.some((item) =>
+  const activeItems = booking.items.filter((item) => item.cancelledAt == null);
+  const alreadyOnBooking = activeItems.some((item) =>
     parsed.data.type === "test"
       ? item.testId === parsed.data.id
       : item.packageId === parsed.data.id,
@@ -501,6 +552,9 @@ export async function replaceBookingItem(
     include: { report: true },
   });
   if (!item) return { error: "Item not found." };
+  if (item.cancelledAt) {
+    return { error: "Cannot replace a cancelled item." };
+  }
   if (item.report) {
     return { error: "Delete the report for this item before replacing it." };
   }
@@ -510,10 +564,16 @@ export async function replaceBookingItem(
     include: { items: true },
   });
   if (!booking) return { error: "Booking not found." };
+  if (Number(booking.amountPaid) > 0) {
+    return {
+      error: "After payment, cancel the item instead of replacing it.",
+    };
+  }
 
   const alreadyOnBooking = booking.items.some(
     (row) =>
       row.id !== bookingItemId &&
+      row.cancelledAt == null &&
       (parsed.data.type === "test"
         ? row.testId === parsed.data.id
         : row.packageId === parsed.data.id),
@@ -554,18 +614,92 @@ export async function removeBookingItem(
     },
   });
   if (!booking) return { error: "Booking not found." };
-  if (booking.items.length <= 1) {
+  if (Number(booking.amountPaid) > 0) {
+    return {
+      error: "After payment, cancel the item instead of deleting it.",
+    };
+  }
+
+  const activeItems = booking.items.filter((row) => row.cancelledAt == null);
+  if (activeItems.length <= 1) {
     return { error: "A booking must keep at least one test or package." };
   }
 
   const item = booking.items.find((row) => row.id === bookingItemId);
   if (!item) return { error: "Item not found." };
+  if (item.cancelledAt) {
+    return { error: "This item is already cancelled." };
+  }
   if (item.report) {
     return { error: "Delete the report for this item before removing it." };
   }
 
   await db.bookingItem.delete({ where: { id: item.id } });
   await recomputeBookingInvoice(bookingId, session.userId);
+  revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidatePath("/admin/bookings");
+  return {};
+}
+
+export async function cancelBookingItem(
+  bookingId: string,
+  bookingItemId: string,
+  input: { password: string; reason?: string },
+): Promise<{ error?: string }> {
+  const session = await requireSession();
+
+  if (!(await verifySessionPassword(input.password))) {
+    return { error: "Incorrect password." };
+  }
+
+  const booking = await db.booking.findUnique({
+    where: { id: bookingId },
+    include: {
+      items: { include: { report: true } },
+    },
+  });
+  if (!booking) return { error: "Booking not found." };
+  if (booking.status === "CANCELLED") {
+    return { error: "This booking is already cancelled." };
+  }
+
+  const item = booking.items.find((row) => row.id === bookingItemId);
+  if (!item) return { error: "Item not found." };
+
+  const gate = canCancelBookingItem(item);
+  if (!gate.ok) return { error: gate.reason };
+
+  const reason = input.reason?.trim() || null;
+  await db.bookingItem.update({
+    where: { id: item.id },
+    data: {
+      cancelledAt: new Date(),
+      cancelledById: session.userId,
+      cancelReason: reason,
+    },
+  });
+
+  await recomputeBookingInvoice(bookingId, session.userId);
+  await refundBookingOverpayment(
+    bookingId,
+    session.userId,
+    `Refund after cancelling ${item.nameSnapshot}`,
+  );
+
+  const remainingActive = await db.bookingItem.count({
+    where: { bookingId, cancelledAt: null },
+  });
+  if (remainingActive === 0) {
+    await db.booking.update({
+      where: { id: bookingId },
+      data: { status: "CANCELLED" },
+    });
+    await sendSms(
+      booking.phone,
+      `Your booking ${booking.referenceCode} with ${siteConfig.shortName} has been cancelled.`,
+    );
+  }
+
   revalidatePath(`/admin/bookings/${bookingId}`);
   revalidatePath("/admin/bookings");
   return {};
@@ -608,6 +742,9 @@ export async function uploadReport(
   if (!item) {
     return { status: "error", error: "That test or package is not on this booking." };
   }
+  if (item.cancelledAt) {
+    return { status: "error", error: "Cannot upload a report for a cancelled item." };
+  }
 
   if (item.report) {
     return {
@@ -630,8 +767,10 @@ export async function uploadReport(
   });
 
   const [itemCount, reportCount] = await Promise.all([
-    db.bookingItem.count({ where: { bookingId } }),
-    db.report.count({ where: { bookingId } }),
+    db.bookingItem.count({ where: { bookingId, cancelledAt: null } }),
+    db.report.count({
+      where: { bookingId, bookingItem: { cancelledAt: null } },
+    }),
   ]);
   const allReportsReady = itemCount > 0 && reportCount >= itemCount;
   if (booking.status !== "CANCELLED") {
@@ -677,8 +816,10 @@ export async function deleteReport(
     select: { status: true },
   });
   const [itemCount, remaining] = await Promise.all([
-    db.bookingItem.count({ where: { bookingId } }),
-    db.report.count({ where: { bookingId } }),
+    db.bookingItem.count({ where: { bookingId, cancelledAt: null } }),
+    db.report.count({
+      where: { bookingId, bookingItem: { cancelledAt: null } },
+    }),
   ]);
   if (
     booking &&

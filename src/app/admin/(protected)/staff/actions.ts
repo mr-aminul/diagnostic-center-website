@@ -5,7 +5,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { requireAdmin, requireSession } from "@/lib/auth";
-import { lastDigits } from "@/lib/phone";
+import { formatBdPhoneForStorage, lastDigits } from "@/lib/phone";
 import { STAFF_DEPARTMENTS, STAFF_ROLES } from "@/lib/staff";
 
 export interface StaffActionState {
@@ -76,6 +76,20 @@ async function assertEmployeeCodeAvailable(
   return null;
 }
 
+/** Match staff phones by last 10 digits so +880… and 01… count as the same number. */
+async function findStaffByPhoneDigits(phone: string, excludeStaffId?: string) {
+  const suffix = lastDigits(phone, 10);
+  const candidates = await db.staffUser.findMany({
+    where: {
+      phone: { contains: suffix },
+      ...(excludeStaffId ? { NOT: { id: excludeStaffId } } : {}),
+    },
+    select: { id: true, phone: true },
+    take: 10,
+  });
+  return candidates.find((user) => lastDigits(user.phone, 10) === suffix) ?? null;
+}
+
 export async function inviteStaff(
   _previousState: StaffActionState,
   formData: FormData
@@ -98,11 +112,12 @@ export async function inviteStaff(
     return { status: "error", error: "Check the form fields and try again." };
   }
 
-  if (lastDigits(parsed.data.phone).length < 10) {
+  const phone = formatBdPhoneForStorage(parsed.data.phone);
+  if (!phone) {
     return { status: "error", error: "Enter a valid phone number." };
   }
 
-  const existingPhone = await db.staffUser.findUnique({ where: { phone: parsed.data.phone } });
+  const existingPhone = await findStaffByPhoneDigits(phone);
   if (existingPhone) {
     return { status: "error", error: "A staff user with this phone already exists." };
   }
@@ -122,7 +137,7 @@ export async function inviteStaff(
   await db.staffUser.create({
     data: {
       name: parsed.data.name,
-      phone: parsed.data.phone,
+      phone,
       email: parsed.data.email,
       role: parsed.data.role,
       department: parsed.data.department,
@@ -166,14 +181,12 @@ export async function updateStaff(
     return { status: "error", error: "You cannot deactivate your own account." };
   }
 
-  if (lastDigits(parsed.data.phone).length < 10) {
+  const phone = formatBdPhoneForStorage(parsed.data.phone);
+  if (!phone) {
     return { status: "error", error: "Enter a valid phone number." };
   }
 
-  const phoneTaken = await db.staffUser.findFirst({
-    where: { phone: parsed.data.phone, NOT: { id: staffId } },
-    select: { id: true },
-  });
+  const phoneTaken = await findStaffByPhoneDigits(phone, staffId);
   if (phoneTaken) {
     return { status: "error", error: "A staff user with this phone already exists." };
   }
@@ -196,7 +209,7 @@ export async function updateStaff(
     where: { id: staffId },
     data: {
       name: parsed.data.name,
-      phone: parsed.data.phone,
+      phone,
       email: parsed.data.email,
       role: parsed.data.role,
       department: parsed.data.department,

@@ -96,7 +96,8 @@ async function toBookingView(
   booking: NonNullable<BookingWithRelations>,
   locale: "en" | "bn" = "en"
 ): Promise<TrackBookingView> {
-  const turnarounds = booking.items.flatMap((item) => {
+  const activeItems = booking.items.filter((item) => item.cancelledAt == null);
+  const turnarounds = activeItems.flatMap((item) => {
     if (item.test?.turnaroundTime) return [item.test.turnaroundTime];
     if (item.package) {
       return item.package.tests.map(({ test }) => test.turnaroundTime);
@@ -107,7 +108,7 @@ async function toBookingView(
   const canManage = booking.status === "PENDING" || booking.status === "CONFIRMED";
 
   const items: TrackBookingItemView[] = await Promise.all(
-    booking.items.map(async (item) => {
+    activeItems.map(async (item) => {
       let downloadToken: string | undefined;
       if (item.report) {
         downloadToken = await createReportDownloadToken({

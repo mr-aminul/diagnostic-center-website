@@ -26,7 +26,7 @@ export interface BookTestBookingInput {
   items: BookTestBookingItem[];
   patientName: string;
   phone: string;
-  age?: number;
+  age: number;
   gender: "MALE" | "FEMALE" | "OTHER";
   branchId?: string;
   preferredDate?: string;

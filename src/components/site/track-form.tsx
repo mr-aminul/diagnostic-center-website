@@ -124,12 +124,12 @@ export function TrackForm({
         : resendState.status === "updated"
           ? resendState
           : verifyState.status === "verified" ||
-              verifyState.status === "error" ||
-              verifyState.status === "empty"
+            verifyState.status === "error" ||
+            verifyState.status === "empty"
             ? verifyState
             : requestState.status === "otp_sent" ||
-                requestState.status === "empty" ||
-                requestState.status === "error"
+              requestState.status === "empty" ||
+              requestState.status === "error"
               ? requestState
               : portalState;
 
@@ -228,11 +228,11 @@ export function TrackForm({
 
         {(cancelState.status === "error" ||
           rescheduleState.status === "error") && (
-          <p className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive" role="alert">
-            {t(
-              ((cancelState.status === "error" && cancelState.errorMessage) ||
-                (rescheduleState.status === "error" && rescheduleState.errorMessage) ||
-                "errorInvalid") as
+            <p className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive" role="alert">
+              {t(
+                ((cancelState.status === "error" && cancelState.errorMessage) ||
+                  (rescheduleState.status === "error" && rescheduleState.errorMessage) ||
+                  "errorInvalid") as
                 | "errorInvalid"
                 | "errorCannotCancel"
                 | "errorCannotReschedule"
@@ -240,9 +240,9 @@ export function TrackForm({
                 | "errorPastDate"
                 | "errorSlotFull"
                 | "errorSessionExpired"
-            )}
-          </p>
-        )}
+              )}
+            </p>
+          )}
 
         {!viewingReportId && (
           <div
@@ -311,303 +311,303 @@ export function TrackForm({
               <p className="text-sm text-muted-foreground">{t("historySubtitle")}</p>
             </div>
             {bookings.map((booking) => {
-            const expanded = expandedId === booking.id;
-            const isCancelled = booking.status === "CANCELLED";
-            const currentStep = statusStepIndex(booking.status);
-            const paidTxn = localPaid[booking.id];
-            const paymentStatus = paidTxn ? "PAID" : booking.paymentStatus;
+              const expanded = expandedId === booking.id;
+              const isCancelled = booking.status === "CANCELLED";
+              const currentStep = statusStepIndex(booking.status);
+              const paidTxn = localPaid[booking.id];
+              const paymentStatus = paidTxn ? "PAID" : booking.paymentStatus;
 
-            return (
-              <Card key={booking.id} className="overflow-hidden">
-                <button
-                  type="button"
-                  className="flex w-full items-start justify-between gap-3 p-4 text-left transition-colors hover:bg-muted/40"
-                  onClick={() => setExpandedId(expanded ? null : booking.id)}
-                >
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant={isCancelled ? "destructive" : "default"}>
-                        {t(`statusValues.${booking.status as StatusKey}`)}
-                      </Badge>
-                      {booking.hasReport && (
-                        <Badge variant="secondary" className="gap-1">
-                          <FileText className="h-3 w-3" />
-                          {t("reportReadyBadge")}
+              return (
+                <Card key={booking.id} className="overflow-hidden">
+                  <button
+                    type="button"
+                    className="flex w-full items-start justify-between gap-3 p-4 text-left transition-colors hover:bg-muted/40"
+                    onClick={() => setExpandedId(expanded ? null : booking.id)}
+                  >
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant={isCancelled ? "destructive" : "default"}>
+                          {t(`statusValues.${booking.status as StatusKey}`)}
                         </Badge>
-                      )}
-                    </div>
-                    <p className="mt-2 font-medium">{booking.patientName}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatDate(booking.createdAt, locale)} ·{" "}
-                      {booking.items
-                        .map((item) => item.name)
-                        .slice(0, 2)
-                        .join(", ")}
-                      {booking.items.length > 2 ? "…" : ""}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {t("staffRef")}: {booking.referenceCode}
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-sm font-semibold text-primary">
-                    {formatCurrency(booking.estimatedTotal, locale)}
-                  </span>
-                </button>
-
-                {expanded && (
-                  <CardContent className="space-y-5 border-t bg-secondary/20 p-4">
-                    {!isCancelled && (
-                      <ol className="space-y-2" aria-label={t("timeline")}>
-                        {STATUS_ORDER.map((step, index) => {
-                          const done = currentStep >= index;
-                          const current = currentStep === index;
-                          return (
-                            <li key={step} className="flex items-center gap-2 text-sm">
-                              {done ? (
-                                <CheckCircle2
-                                  className={cn(
-                                    "h-4 w-4",
-                                    current ? "text-primary" : "text-primary/70"
-                                  )}
-                                  aria-hidden
-                                />
-                              ) : (
-                                <Circle
-                                  className="h-4 w-4 text-muted-foreground/40"
-                                  aria-hidden
-                                />
-                              )}
-                              <span className={cn(current && "font-semibold")}>
-                                {t(`statusValues.${step}`)}
-                              </span>
-                            </li>
-                          );
-                        })}
-                      </ol>
-                    )}
-
-                    {isCancelled && (
-                      <div className="flex items-center gap-2 text-sm text-destructive">
-                        <XCircle className="h-4 w-4" aria-hidden />
-                        {t("statusValues.CANCELLED")}
+                        {booking.hasReport && (
+                          <Badge variant="secondary" className="gap-1">
+                            <FileText className="h-3 w-3" />
+                            {t("reportReadyBadge")}
+                          </Badge>
+                        )}
                       </div>
-                    )}
+                      <p className="mt-2 font-medium">{booking.patientName}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {formatDate(booking.createdAt, locale)} ·{" "}
+                        {booking.items
+                          .map((item) => item.name)
+                          .slice(0, 2)
+                          .join(", ")}
+                        {booking.items.length > 2 ? "…" : ""}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {t("staffRef")}: {booking.referenceCode}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-sm font-semibold text-primary">
+                      {formatCurrency(booking.estimatedTotal, locale)}
+                    </span>
+                  </button>
 
-                    <ul className="space-y-2 text-sm">
-                      {booking.items.map((item) => (
-                        <li
-                          key={item.id}
-                          className="flex flex-col gap-2 rounded-lg border bg-background px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
-                        >
-                          <div className="min-w-0">
-                            <p className="font-medium">{item.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {formatCurrency(item.price, locale)}
-                              {item.hasReport
-                                ? ` · ${t("reportReadyBadge")}`
-                                : !isCancelled
-                                  ? ` · ${t("reportPending")}`
-                                  : null}
-                            </p>
-                          </div>
-                          {item.hasReport ? (
-                            <div className="flex shrink-0 gap-2">
-                              <Button
-                                type="button"
-                                size="sm"
-                                onClick={() => {
-                                  setPortalTab("reports");
-                                  setViewingReportId(item.id);
-                                }}
-                              >
-                                <FileText className="h-4 w-4" />
-                                {t("viewReport")}
-                              </Button>
-                              <a
-                                href={reportDownloadHref(booking, item)}
-                                className={buttonVariants({
-                                  variant: "outline",
-                                  size: "sm",
-                                })}
-                                download={item.reportFileName}
-                              >
-                                <Download className="h-4 w-4" />
-                                {t("downloadReport")}
-                              </a>
+                  {expanded && (
+                    <CardContent className="space-y-5 border-t bg-secondary/20 p-4">
+                      {!isCancelled && (
+                        <ol className="space-y-2" aria-label={t("timeline")}>
+                          {STATUS_ORDER.map((step, index) => {
+                            const done = currentStep >= index;
+                            const current = currentStep === index;
+                            return (
+                              <li key={step} className="flex items-center gap-2 text-sm">
+                                {done ? (
+                                  <CheckCircle2
+                                    className={cn(
+                                      "h-4 w-4",
+                                      current ? "text-primary" : "text-primary/70"
+                                    )}
+                                    aria-hidden
+                                  />
+                                ) : (
+                                  <Circle
+                                    className="h-4 w-4 text-muted-foreground/40"
+                                    aria-hidden
+                                  />
+                                )}
+                                <span className={cn(current && "font-semibold")}>
+                                  {t(`statusValues.${step}`)}
+                                </span>
+                              </li>
+                            );
+                          })}
+                        </ol>
+                      )}
+
+                      {isCancelled && (
+                        <div className="flex items-center gap-2 text-sm text-destructive">
+                          <XCircle className="h-4 w-4" aria-hidden />
+                          {t("statusValues.CANCELLED")}
+                        </div>
+                      )}
+
+                      <ul className="space-y-2 text-sm">
+                        {booking.items.map((item) => (
+                          <li
+                            key={item.id}
+                            className="flex flex-col gap-2 rounded-lg border bg-background px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                          >
+                            <div className="min-w-0">
+                              <p className="font-medium">{item.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {formatCurrency(item.price, locale)}
+                                {item.hasReport
+                                  ? ` · ${t("reportReadyBadge")}`
+                                  : !isCancelled
+                                    ? ` · ${t("reportPending")}`
+                                    : null}
+                              </p>
                             </div>
-                          ) : null}
-                        </li>
-                      ))}
-                    </ul>
+                            {item.hasReport ? (
+                              <div className="flex shrink-0 gap-2">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onClick={() => {
+                                    setPortalTab("reports");
+                                    setViewingReportId(item.id);
+                                  }}
+                                >
+                                  <FileText className="h-4 w-4" />
+                                  {t("viewReport")}
+                                </Button>
+                                <a
+                                  href={reportDownloadHref(booking, item)}
+                                  className={buttonVariants({
+                                    variant: "outline",
+                                    size: "sm",
+                                  })}
+                                  download={item.reportFileName}
+                                >
+                                  <Download className="h-4 w-4" />
+                                  {t("downloadReport")}
+                                </a>
+                              </div>
+                            ) : null}
+                          </li>
+                        ))}
+                      </ul>
 
-                    <p className="text-xs text-muted-foreground">
-                      {booking.paymentMethod === "ONLINE"
-                        ? t("paymentOnline", {
+                      <p className="text-xs text-muted-foreground">
+                        {booking.paymentMethod === "ONLINE"
+                          ? t("paymentOnline", {
                             status: t(
                               `paymentStatus.${paymentStatus as "UNPAID" | "PENDING_ONLINE" | "PARTIAL" | "PAID" | "WAIVED"}`
                             ),
                           })
-                        : t("paymentCash")}
-                    </p>
-
-                    {!isCancelled && (
-                      <p className="rounded-lg bg-background px-3 py-2 text-sm">
-                        <span className="font-medium">{t("estimatedReady")}: </span>
-                        {booking.estimatedReady}
+                          : t("paymentCash")}
                       </p>
-                    )}
 
-                    {booking.paymentMethod === "ONLINE" &&
-                      !paidTxn &&
-                      booking.paymentStatus === "PENDING_ONLINE" &&
-                      demoPayment &&
-                      !isCancelled && (
-                        <div className="space-y-3">
-                          {payId !== booking.id ? (
+                      {!isCancelled && (
+                        <p className="rounded-lg bg-background px-3 py-2 text-sm">
+                          <span className="font-medium">{t("estimatedReady")}: </span>
+                          {booking.estimatedReady}
+                        </p>
+                      )}
+
+                      {booking.paymentMethod === "ONLINE" &&
+                        !paidTxn &&
+                        booking.paymentStatus === "PENDING_ONLINE" &&
+                        demoPayment &&
+                        !isCancelled && (
+                          <div className="space-y-3">
+                            {payId !== booking.id ? (
+                              <Button
+                                type="button"
+                                className="w-full"
+                                onClick={() => setPayId(booking.id)}
+                              >
+                                {t("payNow")}
+                              </Button>
+                            ) : (
+                              <DemoPaymentCheckout
+                                referenceCode={booking.referenceCode}
+                                phone={sessionPhone}
+                                amount={booking.estimatedTotal}
+                                locale={locale}
+                                onPaid={(txn) => {
+                                  setLocalPaid((current) => ({
+                                    ...current,
+                                    [booking.id]: txn,
+                                  }));
+                                  setPayId(null);
+                                }}
+                                onSkip={() => setPayId(null)}
+                              />
+                            )}
+                          </div>
+                        )}
+
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <form action={resendAction} className="flex-1">
+                          <input type="hidden" name="locale" value={locale} />
+                          <input type="hidden" name="bookingId" value={booking.id} />
+                          <Button
+                            type="submit"
+                            variant="outline"
+                            className="w-full"
+                            disabled={resendPending}
+                          >
+                            <MessageSquareText className="h-4 w-4" />
+                            {resendPending ? tCommon("submitting") : t("resendSms")}
+                          </Button>
+                        </form>
+                        <a
+                          href={`tel:${siteConfig.contact.phones[0].replace(/\s/g, "")}`}
+                          className={buttonVariants({
+                            variant: "outline",
+                            className: "flex-1",
+                          })}
+                        >
+                          {tCommon("callUs")}
+                        </a>
+                      </div>
+
+                      {booking.canCancel && (
+                        <div className="space-y-3 border-t pt-4">
+                          <div className="flex flex-wrap gap-2">
                             <Button
                               type="button"
-                              className="w-full"
-                              onClick={() => setPayId(booking.id)}
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                setRescheduleId(
+                                  rescheduleId === booking.id ? null : booking.id
+                                )
+                              }
                             >
-                              {t("payNow")}
+                              {t("reschedule")}
                             </Button>
-                          ) : (
-                            <DemoPaymentCheckout
-                              referenceCode={booking.referenceCode}
-                              phone={sessionPhone}
-                              amount={booking.estimatedTotal}
-                              locale={locale}
-                              onPaid={(txn) => {
-                                setLocalPaid((current) => ({
-                                  ...current,
-                                  [booking.id]: txn,
-                                }));
-                                setPayId(null);
-                              }}
-                              onSkip={() => setPayId(null)}
-                            />
+                            <form action={cancelAction}>
+                              <input type="hidden" name="locale" value={locale} />
+                              <input type="hidden" name="bookingId" value={booking.id} />
+                              <Button
+                                type="submit"
+                                variant="destructive"
+                                size="sm"
+                                disabled={cancelPending}
+                              >
+                                {cancelPending ? tCommon("submitting") : t("cancelBooking")}
+                              </Button>
+                            </form>
+                          </div>
+
+                          {rescheduleId === booking.id && (
+                            <form
+                              action={rescheduleAction}
+                              className="grid gap-3 rounded-lg border bg-background p-4 sm:grid-cols-2"
+                            >
+                              <input type="hidden" name="locale" value={locale} />
+                              <input type="hidden" name="bookingId" value={booking.id} />
+                              <div className="space-y-2">
+                                <Label htmlFor={`date-${booking.id}`}>{t("newDate")}</Label>
+                                <Input
+                                  id={`date-${booking.id}`}
+                                  name="preferredDate"
+                                  type="date"
+                                  required
+                                  min={todayDateInputValue()}
+                                  defaultValue={booking.preferredDate ?? undefined}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`time-${booking.id}`}>{t("newTime")}</Label>
+                                <Select
+                                  name="preferredTime"
+                                  defaultValue={booking.preferredTime ?? undefined}
+                                  items={Object.fromEntries(
+                                    TIME_SLOT_VALUES.map((slot) => [
+                                      slot,
+                                      labelTimeSlot(slot, locale),
+                                    ]),
+                                  )}
+                                >
+                                  <SelectTrigger
+                                    id={`time-${booking.id}`}
+                                    className="w-full bg-background"
+                                  >
+                                    <SelectValue placeholder={t("newTime")} />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-background">
+                                    {TIME_SLOT_VALUES.map((slot) => (
+                                      <SelectItem key={slot} value={slot}>
+                                        {labelTimeSlot(slot, locale)}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <Button
+                                type="submit"
+                                className="sm:col-span-2"
+                                disabled={reschedulePending}
+                              >
+                                {reschedulePending
+                                  ? tCommon("submitting")
+                                  : t("confirmReschedule")}
+                              </Button>
+                            </form>
                           )}
                         </div>
                       )}
-
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                      <form action={resendAction} className="flex-1">
-                        <input type="hidden" name="locale" value={locale} />
-                        <input type="hidden" name="bookingId" value={booking.id} />
-                        <Button
-                          type="submit"
-                          variant="outline"
-                          className="w-full"
-                          disabled={resendPending}
-                        >
-                          <MessageSquareText className="h-4 w-4" />
-                          {resendPending ? tCommon("submitting") : t("resendSms")}
-                        </Button>
-                      </form>
-                      <a
-                        href={`tel:${siteConfig.contact.phones[0].replace(/\s/g, "")}`}
-                        className={buttonVariants({
-                          variant: "outline",
-                          className: "flex-1",
-                        })}
-                      >
-                        {tCommon("callUs")}
-                      </a>
-                    </div>
-
-                    {booking.canCancel && (
-                      <div className="space-y-3 border-t pt-4">
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              setRescheduleId(
-                                rescheduleId === booking.id ? null : booking.id
-                              )
-                            }
-                          >
-                            {t("reschedule")}
-                          </Button>
-                          <form action={cancelAction}>
-                            <input type="hidden" name="locale" value={locale} />
-                            <input type="hidden" name="bookingId" value={booking.id} />
-                            <Button
-                              type="submit"
-                              variant="destructive"
-                              size="sm"
-                              disabled={cancelPending}
-                            >
-                              {cancelPending ? tCommon("submitting") : t("cancelBooking")}
-                            </Button>
-                          </form>
-                        </div>
-
-                        {rescheduleId === booking.id && (
-                          <form
-                            action={rescheduleAction}
-                            className="grid gap-3 rounded-lg border bg-background p-4 sm:grid-cols-2"
-                          >
-                            <input type="hidden" name="locale" value={locale} />
-                            <input type="hidden" name="bookingId" value={booking.id} />
-                            <div className="space-y-2">
-                              <Label htmlFor={`date-${booking.id}`}>{t("newDate")}</Label>
-                              <Input
-                                id={`date-${booking.id}`}
-                                name="preferredDate"
-                                type="date"
-                                required
-                                min={todayDateInputValue()}
-                                defaultValue={booking.preferredDate ?? undefined}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor={`time-${booking.id}`}>{t("newTime")}</Label>
-                              <Select
-                                name="preferredTime"
-                                defaultValue={booking.preferredTime ?? undefined}
-                                items={Object.fromEntries(
-                                  TIME_SLOT_VALUES.map((slot) => [
-                                    slot,
-                                    labelTimeSlot(slot, locale),
-                                  ]),
-                                )}
-                              >
-                                <SelectTrigger
-                                  id={`time-${booking.id}`}
-                                  className="w-full bg-background"
-                                >
-                                  <SelectValue placeholder={t("newTime")} />
-                                </SelectTrigger>
-                                <SelectContent className="bg-background">
-                                  {TIME_SLOT_VALUES.map((slot) => (
-                                    <SelectItem key={slot} value={slot}>
-                                      {labelTimeSlot(slot, locale)}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <Button
-                              type="submit"
-                              className="sm:col-span-2"
-                              disabled={reschedulePending}
-                            >
-                              {reschedulePending
-                                ? tCommon("submitting")
-                                : t("confirmReschedule")}
-                            </Button>
-                          </form>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                )}
-              </Card>
-            );
-          })}
-        </div>
+                    </CardContent>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
         ) : null}
       </div>
     );
@@ -706,11 +706,11 @@ export function TrackForm({
         <p className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive" role="alert">
           {t(
             active.errorMessage as
-              | "errorPhoneInvalid"
-              | "errorOtpInvalid"
-              | "errorOtpExpired"
-              | "errorOtpLocked"
-              | "errorOtpCooldown"
+            | "errorPhoneInvalid"
+            | "errorOtpInvalid"
+            | "errorOtpExpired"
+            | "errorOtpLocked"
+            | "errorOtpCooldown"
           )}
         </p>
       )}

@@ -1,8 +1,17 @@
 import Link from "next/link";
-import { CalendarCheck, Clock, FileClock, Users } from "lucide-react";
+import { CalendarCheck, FileClock, Users } from "lucide-react";
 import { db } from "@/lib/db";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { LinkTableRow } from "@/components/admin/admin-table-row";
 import { formatCurrency, formatDateTime } from "@/lib/format";
 
 export default async function AdminDashboardPage() {
@@ -20,6 +29,15 @@ export default async function AdminDashboardPage() {
     db.booking.findMany({
       orderBy: { createdAt: "desc" },
       take: 8,
+      select: {
+        id: true,
+        referenceCode: true,
+        patientName: true,
+        status: true,
+        paymentStatus: true,
+        estimatedTotal: true,
+        createdAt: true,
+      },
     }),
   ]);
 
@@ -55,33 +73,57 @@ export default async function AdminDashboardPage() {
               View all
             </Link>
           </div>
-          <div className="divide-y">
-            {recentBookings.length === 0 && (
-              <p className="p-4 text-sm text-muted-foreground">No bookings yet.</p>
-            )}
-            {recentBookings.map((booking) => (
-              <Link
-                key={booking.id}
-                href={`/admin/bookings/${booking.id}`}
-                className="flex items-center justify-between gap-4 p-4 hover:bg-muted/50"
-              >
-                <div>
-                  <p className="font-medium">
-                    {booking.patientName}{" "}
-                    <span className="text-muted-foreground">({booking.referenceCode})</span>
-                  </p>
-                  <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Clock className="h-3 w-3" /> {formatDateTime(booking.createdAt)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold">
-                    {formatCurrency(booking.estimatedTotal)}
-                  </span>
-                  <Badge variant="secondary">{booking.status.replaceAll("_", " ")}</Badge>
-                </div>
-              </Link>
-            ))}
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Reference</TableHead>
+                  <TableHead>Patient</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Payment</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead>Booked</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentBookings.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      No bookings yet.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {recentBookings.map((booking) => (
+                  <LinkTableRow key={booking.id} href={`/admin/bookings/${booking.id}`}>
+                    <TableCell>
+                      <Link
+                        href={`/admin/bookings/${booking.id}`}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        {booking.referenceCode}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="font-medium">{booking.patientName}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">
+                        {booking.status.replaceAll("_", " ")}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {booking.paymentStatus.replaceAll("_", " ")}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {formatCurrency(booking.estimatedTotal)}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-muted-foreground">
+                      {formatDateTime(booking.createdAt)}
+                    </TableCell>
+                  </LinkTableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>

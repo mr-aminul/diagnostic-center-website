@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { BD_PHONE_HINT } from "@/lib/phone";
 import { login, type LoginFormState } from "@/app/admin/(public)/login/actions";
 
 const initialState: LoginFormState = { status: "idle" };
@@ -28,6 +29,7 @@ export function LoginForm({
           type="tel"
           required
           autoFocus
+          placeholder={BD_PHONE_HINT}
           defaultValue={demoCredentials?.phone}
         />
       </div>

@@ -15,7 +15,7 @@ const bookingSchema = z
     items: z.array(itemSchema).min(1),
     patientName: z.string().trim().min(1).max(120),
     phone: z.string().trim().min(1).max(20),
-    age: z.coerce.number().int().min(0).max(130).optional(),
+    age: z.coerce.number().int().min(0).max(130),
     gender: z.enum(["MALE", "FEMALE", "OTHER"]),
     branchId: z.string().min(1).optional(),
     preferredDate: z.string().optional(),
@@ -82,6 +82,9 @@ export async function createBooking(
     }
     if (paths.includes("phone")) {
       return { status: "error", errorMessage: "errorPhoneInvalid" };
+    }
+    if (paths.includes("age")) {
+      return { status: "error", errorMessage: "errorAgeRequired" };
     }
     if (paths.includes("gender")) {
       return { status: "error", errorMessage: "errorGenderRequired" };

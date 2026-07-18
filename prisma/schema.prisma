@@ -67,6 +67,7 @@ enum PaymentMethod {
 enum BookingLedgerKind {
   PAYMENT
   DISCOUNT
+  REFUND
 }
 
 enum AppointmentStatus {
@@ -91,9 +92,10 @@ model StaffUser {
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 
-  branch            Branch?          @relation(fields: [branchId], references: [id], onDelete: SetNull)
-  uploadedReports   Report[]
-  recordedPayments  BookingPayment[]
+  branch                Branch?          @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  uploadedReports       Report[]
+  recordedPayments      BookingPayment[]
+  cancelledBookingItems BookingItem[]    @relation("CancelledBookingItems")
 
   @@map("staff_users")
 }
@@ -279,15 +281,19 @@ model BookingPayment {
 }
 
 model BookingItem {
-  id        String   @id @default(cuid())
-  bookingId String
-  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  testId    String?
-  test      Test?    @relation(fields: [testId], references: [id])
-  packageId String?
-  package   Package? @relation(fields: [packageId], references: [id])
+  id            String    @id @default(cuid())
+  bookingId     String
+  booking       Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  testId        String?
+  test          Test?     @relation(fields: [testId], references: [id])
+  packageId     String?
+  package       Package?  @relation(fields: [packageId], references: [id])
   nameSnapshot  String
-  priceSnapshot Decimal @db.Decimal(10, 2)
+  priceSnapshot Decimal   @db.Decimal(10, 2)
+  cancelledAt   DateTime?
+  cancelledById String?
+  cancelledBy   StaffUser? @relation("CancelledBookingItems", fields: [cancelledById], references: [id], onDelete: SetNull)
+  cancelReason  String?
   report        Report?
 
   @@map("booking_items")

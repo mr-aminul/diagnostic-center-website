@@ -434,14 +434,12 @@ export function BookingForm({
           <p className="text-xs text-muted-foreground">{t("phoneHelp")}</p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="age">
-            {t("patientAge")}{" "}
-            <span className="font-normal text-muted-foreground">({tCommon("optional")})</span>
-          </Label>
+          <Label htmlFor="age">{t("patientAge")}</Label>
           <Input
             id="age"
             name="age"
             type="number"
+            required
             min={0}
             max={130}
             defaultValue={demoDefault(DEV_SAMPLE.age)}
@@ -631,6 +629,7 @@ export function BookingForm({
               | "errorPastDate"
               | "errorPhoneInvalid"
               | "errorSlotFull"
+              | "errorAgeRequired"
               | "errorGenderRequired"
               | "errorDateRequired"
               | "errorTimeRequired"

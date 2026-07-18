@@ -9,6 +9,7 @@ import {
   getDefaultCmsSettings,
 } from "../src/lib/cms/defaults";
 import { DEV_SAMPLE } from "../src/lib/dev-tools";
+import { formatBdPhoneForStorage } from "../src/lib/phone";
 import categoriesData from "./seed-data/categories.json";
 import doctorsData from "./seed-data/doctors.json";
 import packagesData from "./seed-data/packages.json";
@@ -199,13 +200,21 @@ async function seedAdminUser() {
   }
 
   const name = process.env.SEED_ADMIN_NAME;
-  const phone = process.env.SEED_ADMIN_PHONE;
+  const rawPhone = process.env.SEED_ADMIN_PHONE;
   const email = process.env.SEED_ADMIN_EMAIL || null;
   const password = process.env.SEED_ADMIN_PASSWORD;
 
-  if (!name || !phone || !password) {
+  if (!name || !rawPhone || !password) {
     console.warn(
       "SEED_ADMIN_NAME / SEED_ADMIN_PHONE / SEED_ADMIN_PASSWORD not set — skipping bootstrap admin creation."
+    );
+    return;
+  }
+
+  const phone = formatBdPhoneForStorage(rawPhone);
+  if (!phone) {
+    console.warn(
+      `SEED_ADMIN_PHONE "${rawPhone}" is not a valid Bangladesh mobile — skipping bootstrap admin creation.`
     );
     return;
   }
@@ -242,7 +251,7 @@ async function seedStaffUsers() {
 
     const profile = {
       name: user.name,
-      phone: user.phone,
+      phone: formatBdPhoneForStorage(user.phone) ?? user.phone,
       email: user.email,
       role: user.role as "ADMIN" | "STAFF" | "TECHNICIAN",
       department: user.department as

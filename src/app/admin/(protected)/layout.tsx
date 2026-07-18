@@ -13,7 +13,7 @@ export default async function AdminProtectedLayout({ children }: { children: Rea
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
-      <aside className="hidden w-64 shrink-0 border-r bg-sidebar text-sidebar-foreground lg:block">
+      <aside className="hidden w-64 shrink-0 border-r bg-sidebar text-sidebar-foreground print:hidden lg:block">
         <div className="border-b p-4">
           <p className="font-semibold">{site.shortName}</p>
           <p className="text-xs text-muted-foreground">Admin Console</p>
@@ -22,7 +22,7 @@ export default async function AdminProtectedLayout({ children }: { children: Rea
       </aside>
 
       <div className="flex flex-1 flex-col">
-        <header className="flex h-14 items-center justify-between gap-3 border-b bg-background px-4">
+        <header className="flex h-14 items-center justify-between gap-3 border-b bg-background px-4 print:hidden">
           <div className="flex items-center gap-2 lg:hidden">
             <Sheet>
               <SheetTrigger render={<Button variant="outline" size="icon" aria-label="Menu" />}>
@@ -47,7 +47,9 @@ export default async function AdminProtectedLayout({ children }: { children: Rea
             </form>
           </div>
         </header>
-        <main className="flex-1 bg-muted/20 p-4 sm:p-6">{children}</main>
+        <main className="flex-1 bg-muted/20 p-4 sm:p-6 print:bg-white print:p-0">
+          {children}
+        </main>
       </div>
     </div>
   );

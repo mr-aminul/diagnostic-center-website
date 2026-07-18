@@ -25,7 +25,22 @@ function createPrismaClient() {
   if (!url.searchParams.has("connect_timeout")) {
     url.searchParams.set("connect_timeout", "5");
   }
-  if (!url.searchParams.has("options")) {
+
+  // Neon PgBouncer (host contains `-pooler.`) rejects startup params like
+  // `statement_timeout`. Use Prisma transaction timeouts instead on Neon.
+  // https://neon.tech/docs/connect/connection-errors#unsupported-startup-parameter
+  const isNeonPooler = url.hostname.includes("-pooler.");
+  if (isNeonPooler) {
+    const options = url.searchParams.get("options");
+    if (options?.includes("statement_timeout")) {
+      const cleaned = options
+        .replace(/-c\s*statement_timeout=\d+/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (cleaned) url.searchParams.set("options", cleaned);
+      else url.searchParams.delete("options");
+    }
+  } else if (!url.searchParams.has("options")) {
     url.searchParams.set("options", "-c statement_timeout=8000");
   }
 

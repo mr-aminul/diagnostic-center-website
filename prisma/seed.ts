@@ -193,12 +193,6 @@ async function seedCmsContent() {
 }
 
 async function seedAdminUser() {
-  const existingAdmin = await db.staffUser.findFirst({ where: { role: "ADMIN" } });
-  if (existingAdmin) {
-    console.log("An admin user already exists — skipping bootstrap admin creation.");
-    return;
-  }
-
   const name = process.env.SEED_ADMIN_NAME;
   const rawPhone = process.env.SEED_ADMIN_PHONE;
   const email = process.env.SEED_ADMIN_EMAIL || null;
@@ -220,6 +214,42 @@ async function seedAdminUser() {
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
+  const legacyPhone = `+880${phone.slice(1)}`;
+
+  // Prefer the canonical 01… phone; also match older +880… rows so demo
+  // prefills (SEED_ADMIN_*) stay aligned with the database hash.
+  const existing = await db.staffUser.findFirst({
+    where: {
+      OR: [{ phone }, { phone: legacyPhone }, { phone: { endsWith: phone.slice(1) } }],
+    },
+  });
+
+  if (existing) {
+    await db.staffUser.update({
+      where: { id: existing.id },
+      data: {
+        name,
+        phone,
+        email,
+        passwordHash,
+        role: "ADMIN",
+        isActive: true,
+        department: "ADMINISTRATION",
+        jobTitle: existing.jobTitle ?? "Bootstrap administrator",
+      },
+    });
+    console.log(
+      `Synced bootstrap admin "${name}" (${phone}) to SEED_ADMIN_PASSWORD.`,
+    );
+    return;
+  }
+
+  const existingAdmin = await db.staffUser.findFirst({ where: { role: "ADMIN" } });
+  if (existingAdmin) {
+    console.log("An admin user already exists — skipping bootstrap admin creation.");
+    return;
+  }
+
   await db.staffUser.create({
     data: {
       name,

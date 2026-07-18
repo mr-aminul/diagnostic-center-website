@@ -34,13 +34,7 @@ export interface AdminFaqItem {
 export function FaqManager({ items }: { items: AdminFaqItem[] }) {
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">FAQ</h1>
-          <p className="text-sm text-muted-foreground">
-            Questions shown on the public FAQ page (English + Bangla).
-          </p>
-        </div>
+      <div className="flex items-center justify-end gap-3">
         <EntityFormDialog
           triggerLabel={
             <>
@@ -49,6 +43,7 @@ export function FaqManager({ items }: { items: AdminFaqItem[] }) {
           }
           title="Add FAQ item"
           action={createFaqItem}
+          triggerSize="default"
         >
           <FaqFields defaultSortOrder={items.length} />
         </EntityFormDialog>

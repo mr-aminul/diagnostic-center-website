@@ -55,8 +55,7 @@ export function TestsManager({
 }) {
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">Tests</h1>
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <div className="flex gap-2">
           <EntityFormDialog
             triggerLabel={
@@ -66,6 +65,7 @@ export function TestsManager({
             }
             title="Add category"
             action={createCategory}
+            triggerSize="default"
           >
             <div className="space-y-2">
               <Label htmlFor="cat-name">Name (English)</Label>
@@ -85,6 +85,7 @@ export function TestsManager({
             }
             title="Add test"
             action={createTest}
+            triggerSize="default"
           >
             <TestFields categories={categories} />
           </EntityFormDialog>

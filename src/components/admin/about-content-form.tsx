@@ -23,13 +23,6 @@ export function AboutContentForm({ about }: { about: CmsAboutContent }) {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold">About page</h1>
-        <p className="text-sm text-muted-foreground">
-          Mission and accreditation copy. Center name and description come from Site settings.
-        </p>
-      </div>
-
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Content</CardTitle>

@@ -36,13 +36,7 @@ export interface AdminTestimonial {
 export function TestimonialsManager({ items }: { items: AdminTestimonial[] }) {
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">Testimonials</h1>
-          <p className="text-sm text-muted-foreground">
-            Patient quotes shown on the home page when testimonials are enabled.
-          </p>
-        </div>
+      <div className="flex items-center justify-end gap-3">
         <EntityFormDialog
           triggerLabel={
             <>
@@ -51,6 +45,7 @@ export function TestimonialsManager({ items }: { items: AdminTestimonial[] }) {
           }
           title="Add testimonial"
           action={createTestimonial}
+          triggerSize="default"
         >
           <TestimonialFields defaultSortOrder={items.length} />
         </EntityFormDialog>

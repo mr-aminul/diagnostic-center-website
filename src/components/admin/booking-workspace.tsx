@@ -6,7 +6,7 @@ export function BookingWorkspace({
   children,
   aside,
 }: {
-  header: ReactNode;
+  header?: ReactNode;
   children: ReactNode;
   aside: ReactNode;
 }) {

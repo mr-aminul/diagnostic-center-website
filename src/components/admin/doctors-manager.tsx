@@ -34,8 +34,7 @@ export interface AdminDoctor {
 export function DoctorsManager({ doctors }: { doctors: AdminDoctor[] }) {
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Doctors</h1>
+      <div className="flex items-center justify-end">
         <EntityFormDialog
           triggerLabel={
             <>
@@ -44,6 +43,7 @@ export function DoctorsManager({ doctors }: { doctors: AdminDoctor[] }) {
           }
           title="Add doctor"
           action={createDoctor}
+          triggerSize="default"
         >
           <DoctorFields />
         </EntityFormDialog>

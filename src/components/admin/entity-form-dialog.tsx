@@ -23,6 +23,7 @@ export function EntityFormDialog({
   action,
   children,
   submitLabel = "Save",
+  triggerSize = "sm",
   open: controlledOpen,
   onOpenChange,
 }: {
@@ -31,6 +32,8 @@ export function EntityFormDialog({
   action: (previousState: EntityFormState, formData: FormData) => Promise<EntityFormState>;
   children: ReactNode;
   submitLabel?: string;
+  /** Page CTAs use default (matches filter dropdowns); row actions stay sm. */
+  triggerSize?: "default" | "sm";
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
@@ -64,7 +67,9 @@ export function EntityFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button variant="outline" size="sm" />}>{triggerLabel}</DialogTrigger>
+      <DialogTrigger render={<Button variant="outline" size={triggerSize} />}>
+        {triggerLabel}
+      </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

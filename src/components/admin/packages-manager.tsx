@@ -47,8 +47,7 @@ export function PackagesManager({
 }) {
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">Packages</h1>
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <EntityFormDialog
           triggerLabel={
             <>
@@ -57,6 +56,7 @@ export function PackagesManager({
           }
           title="Add package"
           action={createPackage}
+          triggerSize="default"
         >
           <PackageFields testOptions={testOptions} />
         </EntityFormDialog>

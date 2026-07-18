@@ -9,15 +9,6 @@ export default async function AdminSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold">Site settings</h1>
-        <p className="text-sm text-muted-foreground">
-          {isAdmin
-            ? "Branding, contact details, feature toggles, and your account password."
-            : "Update your account password. Branding and feature settings need an admin account."}
-        </p>
-      </div>
-
       <Suspense fallback={<div className="h-64 animate-pulse rounded-lg bg-muted/50" />}>
         <SiteSettingsForms settings={settings} isAdmin={isAdmin} />
       </Suspense>

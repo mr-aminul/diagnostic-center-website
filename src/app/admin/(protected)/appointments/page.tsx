@@ -100,16 +100,6 @@ export default async function AdminAppointmentsPage({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">Doctor appointments</h1>
-          <p className="text-sm text-muted-foreground">
-            Serial-based consultations from the public site or hotline bookings.
-          </p>
-        </div>
-        <BookAppointmentDialog doctors={doctors} />
-      </div>
-
       <AdminFilterBar
         searchPlaceholder="Search patient, phone, or doctor"
         searchDefaultValue={query}
@@ -151,7 +141,11 @@ export default async function AdminAppointmentsPage({
             ],
           },
         ]}
-      />
+      >
+        <div className="ml-auto flex items-end">
+          <BookAppointmentDialog doctors={doctors} />
+        </div>
+      </AdminFilterBar>
 
       <div className="overflow-x-auto rounded-lg border bg-background">
         <Table>

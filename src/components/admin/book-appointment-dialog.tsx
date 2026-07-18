@@ -114,7 +114,7 @@ export function BookAppointmentDialog({ doctors }: { doctors: BookableDoctor[] }
         if (next) prepareFreshForm();
       }}
     >
-      <DialogTrigger render={<Button size="sm" disabled={doctors.length === 0} />}>
+      <DialogTrigger render={<Button disabled={doctors.length === 0} />}>
         <Plus className="h-4 w-4" />
         Book appointment
       </DialogTrigger>

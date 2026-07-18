@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Script from "next/script";
 import { getLocale } from "next-intl/server";
 import { Roboto } from "next/font/google";
 import { NavigationProgress } from "@/components/navigation-progress";
@@ -26,9 +27,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     <html lang={locale} suppressHydrationWarning>
       <head>
         <style dangerouslySetInnerHTML={{ __html: buildThemeCss(site.theme) }} />
-        <script dangerouslySetInnerHTML={{ __html: ADMIN_THEME_INIT_SCRIPT }} />
       </head>
       <body className={`${roboto.variable} min-h-screen font-sans antialiased`}>
+        <Script id="admin-theme-init" strategy="beforeInteractive">
+          {ADMIN_THEME_INIT_SCRIPT}
+        </Script>
         <NavigationProgress />
         {children}
       </body>

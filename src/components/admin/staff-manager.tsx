@@ -59,13 +59,7 @@ export function StaffManager({
 }) {
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">Staff users</h1>
-          <p className="text-sm text-muted-foreground">
-            Invite colleagues, reset passwords, and manage access. Admins only.
-          </p>
-        </div>
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <EntityFormDialog
           triggerLabel={
             <>
@@ -75,6 +69,7 @@ export function StaffManager({
           title="Invite staff"
           action={inviteStaff}
           submitLabel="Create staff user"
+          triggerSize="default"
         >
           <StaffFields branches={branches} />
           <div className="space-y-2">

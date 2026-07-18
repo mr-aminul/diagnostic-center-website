@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { ArrowLeft, FileText } from "lucide-react";
+import { FileText } from "lucide-react";
 import { AdminBookingForm } from "@/components/admin/admin-booking-form";
 import {
   BookingSection,
@@ -35,18 +34,6 @@ export default async function AdminNewBookingPage() {
 
   return (
     <BookingWorkspace
-      header={
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <Link
-            href="/admin/bookings"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" /> Bookings
-          </Link>
-          <div className="h-4 w-px bg-border" />
-          <h1 className="text-lg font-semibold tracking-tight">New booking</h1>
-        </div>
-      }
       aside={
         <BookingSection title="Report" className="rounded-xl border bg-card p-4">
           <div className="flex items-start gap-2 text-sm text-muted-foreground">

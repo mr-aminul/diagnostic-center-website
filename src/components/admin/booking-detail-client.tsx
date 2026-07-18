@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import {
   AdminBookingForm,
   type BookingFormDefaults,
@@ -59,43 +57,33 @@ export function BookingDetailClient({
 
   return (
     <div className="flex flex-col gap-4">
-      <header className="sticky top-0 z-10 -mx-1 rounded-xl border bg-background/95 px-3 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:px-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5">
-            <Link
-              href="/admin/bookings"
-              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Bookings
-            </Link>
-            <div className="h-4 w-px bg-border" />
-            <h1 className="font-mono text-lg font-semibold tracking-tight">
-              {referenceCode}
-            </h1>
-            <BookingStatusForm
-              bookingId={bookingId}
-              currentStatus={status}
-              canCancel={canCancel}
-              cancelBlockedReason={cancelBlockedReason}
-            />
-          </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-3 py-3 sm:px-4">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5">
+          <p className="font-mono text-lg font-semibold tracking-tight">
+            {referenceCode}
+          </p>
+          <BookingStatusForm
+            bookingId={bookingId}
+            currentStatus={status}
+            canCancel={canCancel}
+            cancelBlockedReason={cancelBlockedReason}
+          />
+        </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {balance > 0 ? (
-              <p className="text-sm font-semibold tabular-nums text-rose-700 dark:text-rose-300">
-                Due {formatCurrency(balance)}
-              </p>
-            ) : null}
-            <PrintInvoiceButton bookingId={bookingId} />
-          </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {balance > 0 ? (
+            <p className="text-sm font-semibold tabular-nums text-rose-700 dark:text-rose-300">
+              Due {formatCurrency(balance)}
+            </p>
+          ) : null}
+          <PrintInvoiceButton bookingId={bookingId} />
         </div>
         {isCancelled ? (
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="w-full text-sm text-muted-foreground">
             Cancelled — invoice history and reports remain available.
           </p>
         ) : null}
-      </header>
+      </div>
 
       <AdminBookingForm
         mode="edit"

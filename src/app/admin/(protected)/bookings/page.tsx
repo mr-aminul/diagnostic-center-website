@@ -94,22 +94,6 @@ export default async function AdminBookingsPage({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">Bookings</h1>
-          <p className="text-sm text-muted-foreground">
-            Test and package bookings from the public site or hotline.
-          </p>
-        </div>
-        <Link
-          href="/admin/bookings/new"
-          className={cn(buttonVariants({ size: "sm" }))}
-        >
-          <Plus className="h-4 w-4" />
-          Book test
-        </Link>
-      </div>
-
       <AdminFilterBar
         searchPlaceholder="Search by name, phone, or reference code"
         searchDefaultValue={query}
@@ -161,7 +145,17 @@ export default async function AdminBookingsPage({
             ],
           },
         ]}
-      />
+      >
+        <div className="ml-auto flex items-end">
+          <Link
+            href="/admin/bookings/new"
+            className={cn(buttonVariants())}
+          >
+            <Plus className="h-4 w-4" />
+            Book test
+          </Link>
+        </div>
+      </AdminFilterBar>
 
       <div className="overflow-x-auto rounded-lg border bg-background">
         <Table>

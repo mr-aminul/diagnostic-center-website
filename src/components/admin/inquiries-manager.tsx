@@ -52,22 +52,11 @@ const initialReplyState: ReplyInquiryState = { status: "idle" };
 
 export function InquiriesManager({
   inquiries,
-  hideHeader = false,
 }: {
   inquiries: AdminInquiry[];
-  hideHeader?: boolean;
 }) {
   return (
     <div className="space-y-4">
-      {!hideHeader && (
-        <div>
-          <h1 className="text-xl font-semibold">Contact inquiries</h1>
-          <p className="text-sm text-muted-foreground">
-            Messages submitted from the public contact form.
-          </p>
-        </div>
-      )}
-
       <div className="overflow-x-auto rounded-lg border bg-background">
         <Table>
           <TableHeader>

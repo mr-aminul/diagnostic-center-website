@@ -34,8 +34,7 @@ function isInteractiveTarget(target: EventTarget | null) {
 export function BranchesManager({ branches }: { branches: AdminBranch[] }) {
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Branches</h1>
+      <div className="flex items-center justify-end">
         <EntityFormDialog
           triggerLabel={
             <>
@@ -44,6 +43,7 @@ export function BranchesManager({ branches }: { branches: AdminBranch[] }) {
           }
           title="Add branch"
           action={createBranch}
+          triggerSize="default"
         >
           <BranchFields />
         </EntityFormDialog>

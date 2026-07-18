@@ -62,13 +62,6 @@ export function HomeCollectionContentForm({
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold">Home collection page</h1>
-        <p className="text-sm text-muted-foreground">
-          Marketing copy for /home-collection. Toggle the page in Site settings → Features.
-        </p>
-      </div>
-
       <form action={action} className="space-y-6">
         <Card>
           <CardHeader>

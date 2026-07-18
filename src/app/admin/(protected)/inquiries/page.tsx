@@ -34,13 +34,6 @@ export default async function AdminInquiriesPage({
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold">Contact inquiries</h1>
-        <p className="text-sm text-muted-foreground">
-          Messages submitted from the public contact form. Reply by email or SMS.
-        </p>
-      </div>
-
       <AdminFilterBar
         searchPlaceholder="Search name, phone, email, or message"
         searchDefaultValue={query}
@@ -60,7 +53,7 @@ export default async function AdminInquiriesPage({
         ]}
       />
 
-      <InquiriesManager inquiries={inquiries} hideHeader />
+      <InquiriesManager inquiries={inquiries} />
     </div>
   );
 }
